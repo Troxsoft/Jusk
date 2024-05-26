@@ -1,0 +1,35 @@
+@pkg main
+@import "std"
+@import "./e"
+fn main() {
+    
+    var nombre:Str = Console:readLine()
+    console:write("Hola ${nombre}\n")
+}
+// estructuras
+
+struct Persona {
+    nombre: Str
+    edad: int
+
+    pub fn Hablar(){
+        console:write("Hola me llamo ${self.nombre}\n")
+    }    
+}
+pub fn NewPersona():*Persona{
+    return &Persona{
+        nombre: ""
+        edad: 0
+    }
+}
+
+// bucles
+for i in 1..10{
+
+}
+while i < 10{
+
+}
+
+//math
+2+2+3/3+(3**3)^2
