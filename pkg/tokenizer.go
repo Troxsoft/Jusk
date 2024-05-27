@@ -32,9 +32,27 @@ func (j *Jusk) Tokenize() error {
 			toks = append(toks, NewToken(STRING, j.Code[start:end]))
 			i = end + 1
 
+		} else if i+6 < len(j.Code) && ac == 'r' && j.Code[i+1] == 'e' && j.Code[i+2] == 't' && j.Code[i+3] == 'u' && j.Code[i+4] == 'r' && j.Code[i+5] == 'n' && j.Code[i+6] == ' ' {
+			toks = append(toks, NewToken(RETURN, "return"))
+			i += 6
+		} else if i+5 < len(j.Code) && ac == 'f' && j.Code[i+1] == 'n' && j.Code[i+2] == ' ' {
+			toks = append(toks, NewToken(FUNCTION, "function"))
+			i += 2
+		} else if i+5 < len(j.Code) && ac == 'c' && j.Code[i+1] == 'l' && j.Code[i+2] == 'a' && j.Code[i+3] == 's' && j.Code[i+4] == 's' && j.Code[i+5] == ' ' {
+			toks = append(toks, NewToken(CLASS, "class"))
+			i += 5
 		} else if i+3 < len(j.Code) && ac == 'v' && j.Code[i+1] == 'a' && j.Code[i+2] == 'r' && j.Code[i+3] == ' ' {
 			toks = append(toks, NewToken(VAR, "var"))
 			i += 3
+		} else if i+3 < len(j.Code) && ac == '@' && j.Code[i+1] == 'c' && j.Code[i+2] == 'p' && j.Code[i+3] == 'p' {
+			toks = append(toks, NewToken(CPP, "@cpp"))
+			i += 4
+		} else if i+3 < len(j.Code) && ac == 'p' && j.Code[i+1] == 'u' && j.Code[i+2] == 'b' && j.Code[i+3] == ' ' {
+			toks = append(toks, NewToken(PUBLIC, "pub"))
+			i += 3
+		} else if i+4 < len(j.Code) && ac == 'p' && j.Code[i+1] == 'r' && j.Code[i+2] == 'i' && j.Code[i+3] == 'v' && j.Code[i+4] == ' ' {
+			toks = append(toks, NewToken(PRIVATE, "priv"))
+			i += 4
 		} else if (ac >= 'A' && ac <= 'Z') || (ac >= 'a' && ac <= 'z') || ac == '_' {
 			start := i
 			end := i
@@ -55,6 +73,9 @@ func (j *Jusk) Tokenize() error {
 		} else if ac == '+' {
 			toks = append(toks, NewToken(PLUS, "+"))
 			i++
+		} else if ac == ',' {
+			toks = append(toks, NewToken(COMMA, "."))
+			i++
 		} else if ac == '%' {
 			toks = append(toks, NewToken(PORCENT, "%"))
 			i++
@@ -69,6 +90,13 @@ func (j *Jusk) Tokenize() error {
 			i++
 		} else if ac == '*' {
 			toks = append(toks, NewToken(MULTIPLY, "*"))
+			i++
+		} else if ac == '{' {
+			toks = append(toks, NewToken(OPEN_BRACKET, "{"))
+
+			i++
+		} else if ac == '}' {
+			toks = append(toks, NewToken(CLOSE_BRACKET, "}"))
 			i++
 		} else if ac == '(' {
 			toks = append(toks, NewToken(OPEN_PARENT, "("))

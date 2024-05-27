@@ -13,7 +13,15 @@ const (
 	TypeAssingDeclaration
 	TypeAsingType
 	TypeVarDeclaration
+	TypeVarDeclarationClass
 	TypeParent
+	TypeBody
+	TypeClass
+	TypeCPP
+	TypeArgument
+	TypeFunction
+	TypeReturn
+	TypeFunctionCall
 )
 
 type LiteralNumeric struct {
@@ -23,8 +31,19 @@ type LiteralNumeric struct {
 type LiteralString struct {
 	Val string
 }
+type Return struct {
+	Val any
+}
+
+func (l Return) Value() any {
+	return l.Val
+}
+func (l Return) Kind() int {
+	return TypeReturn
+}
+
 type Parent struct {
-	Children Expr
+	Children []Stmt
 }
 
 func (l Parent) Value() any {
@@ -42,8 +61,8 @@ func (l LiteralString) Kind() int {
 
 type VarDeclaration struct {
 	Symbol any
-	Type   Expr
-	Val    Expr
+	Type   any
+	Val    any
 }
 
 func (v VarDeclaration) Kind() int {
@@ -157,14 +176,14 @@ func (a *Ast) parseVarDeclaration() Stmt {
 	if VarName.Type != SYMBOL {
 		panic("Expectative symbol")
 	}
-	f := a.parseExpr()
+	f := a.parseStmt()
 	//a.next()
 	//fmt.Printf("%+v\n", f)
 
 	typeVar := a.parseAssingTypeExpr()
 	//fmt.Printf("%+v\n", typeVar)
 	a.next()
-	assing := a.parseExpr()
+	assing := a.parseStmt()
 	//a.next()
 	return VarDeclaration{
 		Symbol: f,
@@ -174,19 +193,36 @@ func (a *Ast) parseVarDeclaration() Stmt {
 
 }
 func (a *Ast) parseStmt() Stmt {
-	switch a.actual().Type {
-	case VAR:
-		{
-			return a.parseVarDeclaration()
-		}
-	default:
+	typeee := a.actual().Type
 
-		{
-			return a.parseExpr()
-		}
+	if typeee == VAR {
+		return a.parseVarDeclaration()
+	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == SYMBOL {
+		vari := a.parseVariableClass()
+		return vari
+	} else if typeee == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {
+
+		return a.parseFunctionCall()
+	} else if typeee == OPEN_BRACKET {
+
+		body := a.parseBody()
+		return body
+	} else if typeee == CLASS {
+		class := a.parseClass()
+		return class
+	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == FUNCTION {
+		vari := a.parseFunction()
+		return vari
+	} else if typeee == CPP {
+		cpp := a.parseCpp()
+		return cpp
+	} else {
+		return a.parseExpr()
 	}
-	//return a.parseExpr()
 }
+
+//return a.parseExpr()
+
 func (a *Ast) parseExpr() Expr {
 	return a.parseAssingExpr()
 }
@@ -281,23 +317,45 @@ func (a *Ast) parsePrimaryExpr() Expr {
 		}
 	case SYMBOL:
 		{
+
 			a.next()
 			return Identify{
 				Val: tok.Value,
 			}
+
 		}
 	case OPEN_PARENT:
 		{
+			ds := []Stmt{}
 			a.next()
-			val := a.parseExpr()
-			g := a.actual()
-			if g.Type != CLOSE_PARENT {
-				panic("Expectative close parent")
+			if a.actual().Type == CLOSE_PARENT {
+				a.next()
+				return Parent{
+					Children: ds,
+				}
 			}
-			a.next()
+			for {
+				e := a.parseExpr()
+				if a.actual().Type != CLOSE_PARENT {
+					if a.actual().Type == COMMA {
+
+						ds = append(ds, e)
+						a.next()
+					} else {
+						panic("expectative \",\"")
+					}
+				} else {
+					ds = append(ds, e)
+					a.next()
+					break
+				}
+
+				//g := a.actual()
+				//a.next()
+			}
 
 			return Parent{
-				Children: val,
+				Children: ds,
 			}
 
 		}
@@ -314,8 +372,16 @@ func (a *Ast) parsePrimaryExpr() Expr {
 				Val: tok.Value.(string),
 			}
 		}
+	case RETURN:
+		{
+			a.next()
+			return Return{
+				Val: a.parseStmt(),
+			}
+		}
 	default:
 		{
+
 			//log.Fatalf("Invalid Token: %+v\n", tok)
 			panic(fmt.Sprintf("Invalid token %+v", tok))
 		}

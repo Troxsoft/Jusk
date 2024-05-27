@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"jusklang/pkg"
+	"os"
 )
 
 func main() {
@@ -12,9 +13,15 @@ func main() {
 			fmt.Println("Error: ", err)
 		}
 	}()
-	code := "var x:Str = \"Hola Mundo\""
+	f := os.Args[1]
+	b, err := os.ReadFile(f)
+	if err != nil {
+		panic(err)
+	}
+
+	code := string(b)
 	jusk := pkg.NewJuskLang(code)
-	err := jusk.Tokenize()
+	err = jusk.Tokenize()
 	if err != nil {
 		fmt.Println("Error: ", err.Error())
 	} else {

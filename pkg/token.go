@@ -15,9 +15,18 @@ const (
 	PORCENT
 	OPEN_PARENT
 	CLOSE_PARENT
+	OPEN_BRACKET
+	CLOSE_BRACKET
 	VAR
 	TWO_POINTS
 	EQUAL
+	PRIVATE
+	PUBLIC
+	CLASS
+	CPP
+	FUNCTION
+	RETURN
+	COMMA
 )
 
 func isValidSize(s string, index, l int) bool {
