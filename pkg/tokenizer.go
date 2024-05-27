@@ -3,6 +3,7 @@ package pkg
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func (j *Jusk) Tokenize() error {
@@ -19,17 +20,27 @@ func (j *Jusk) Tokenize() error {
 
 			start := i + 1
 			end := i + 1
-			for (end < len(j.Code) && j.Code[end] != '"') || (end < len(j.Code) && j.Code[end] != '"' && j.Code[end-1] != '\\') {
-				//fmt.Println(string(j.Code[end]))
+			for (end < len(j.Code) && j.Code[end] != '"') || (end < len(j.Code) && j.Code[end] != '"' && string(j.Code[end-1]) != `\`) {
+
 				if end+1 < len(j.Code) {
-					end++
+
+					if end+1 < len(j.Code) && j.Code[end] == '\\' && j.Code[end+1] == '"' {
+						end++
+						end++
+					} else {
+
+						end++
+					}
 				} else {
 					end++
 					panic("Expectative close string but found:EOF")
 					//break
 				}
 			}
-			toks = append(toks, NewToken(STRING, j.Code[start:end]))
+			str := strings.ReplaceAll(j.Code[start:end], `\n`, "\n")
+			str = strings.ReplaceAll(str, `\"`, "\"")
+
+			toks = append(toks, NewToken(STRING, str))
 			i = end + 1
 
 		} else if i+6 < len(j.Code) && ac == 'r' && j.Code[i+1] == 'e' && j.Code[i+2] == 't' && j.Code[i+3] == 'u' && j.Code[i+4] == 'r' && j.Code[i+5] == 'n' && j.Code[i+6] == ' ' {

@@ -18,10 +18,13 @@ func NewCompiler(ast *Ast) *Compiler {
 func (c *Compiler) preprocessType(str string) string {
 	if str == "Int" {
 		return "int"
+	} else if str == "Bool" {
+		return "bool"
 	}
 	return str
 }
 func (c *Compiler) compilePrimaryExpressions(epr Stmt) {
+
 	if epr.Kind() == TypeLiteralNumber {
 		c.Cpp += fmt.Sprint(epr.(LiteralNumeric).Value())
 	} else if epr.Kind() == TypeParent {
@@ -37,6 +40,8 @@ func (c *Compiler) compilePrimaryExpressions(epr Stmt) {
 		c.Cpp += ")"
 	} else if epr.Kind() == TypeIdentify {
 		c.Cpp += epr.(Identify).Val.(string)
+	} else if epr.Kind() == TypeLiteralString {
+		c.Cpp += fmt.Sprintf("Str(%s)", epr.(LiteralString).Val)
 	} else if epr.Kind() == TypeAssingDeclaration {
 		f := epr.(AssingDeclaration)
 		c.Cpp += f.Symbol.(Identify).Val.(string)
@@ -113,7 +118,20 @@ func (c *Compiler) compilePrimaryExpressions(epr Stmt) {
 			c.compilePrimaryExpressions(e)
 		}
 		for _, e := range o.Methods {
-			c.compilePrimaryExpressions(e)
+			if e.Symbol.Val.(string) != "New" {
+				c.compilePrimaryExpressions(e)
+			} else {
+
+				c.Cpp += "public: " + epr.(Class).Symbol.Val.(string) + " ("
+				for i, e90 := range e.Arguments {
+					c.compilePrimaryExpressions(e90)
+					if i != len(e.Arguments)-1 {
+						c.Cpp += ","
+					}
+				}
+				c.Cpp += ")"
+				c.compilePrimaryExpressions(e.Body)
+			}
 		}
 		c.Cpp += "};"
 	} else if epr.Kind() == TypeCPP {

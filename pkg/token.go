@@ -27,6 +27,7 @@ const (
 	FUNCTION
 	RETURN
 	COMMA
+	PACKAGE
 )
 
 func isValidSize(s string, index, l int) bool {

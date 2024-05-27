@@ -37,19 +37,35 @@ func (a Argument) Value() any {
 	return ""
 }
 func (a *Ast) parseArgument() Argument {
+	//fmt.Println(a.Tokens[2].Value)
+	if a.actual().Type == SYMBOL && a.Tokens[1].Type == TWO_POINTS && a.Tokens[2].Type == CPP {
+		name := Identify{
+			Val: a.actual().Value.(string),
+		}
+		a.next()
+		a.next()
+		e := a.parseCpp()
 
-	if a.actual().Type != SYMBOL && a.Tokens[1].Type != TWO_POINTS && a.Tokens[2].Type != SYMBOL {
-		panic("Invalid sintax on function declaration")
-	}
-	name := Identify{
-		Val: a.actual().Value.(string),
-	}
-	a.next()
-	e := a.parseAssingTypeExpr()
+		return Argument{
+			Symbol: name,
+			Type: AssingType{
+				Type: e.Code,
+			},
+		}
+	} else {
+		if a.actual().Type != SYMBOL && a.Tokens[1].Type != TWO_POINTS && a.Tokens[2].Type != SYMBOL {
+			panic("Invalid sintax on function declaration")
+		}
+		name := Identify{
+			Val: a.actual().Value.(string),
+		}
+		a.next()
+		e := a.parseAssingTypeExpr()
 
-	return Argument{
-		Symbol: name,
-		Type:   e.(AssingType),
+		return Argument{
+			Symbol: name,
+			Type:   e.(AssingType),
+		}
 	}
 
 }
