@@ -1,5 +1,5 @@
 
-@cpp("@include<iostream>\n")
+@cpp("#include<iostream>\n")
 class Str{
     @cpp("private:std::string _str;")
     pub fn New(){
@@ -19,5 +19,3 @@ class Str{
     }
     
 }
-NewStr
-Str()

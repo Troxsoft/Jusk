@@ -1,171 +1,110 @@
 package pkg
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 type Compiler struct {
-	Astes *Ast
-	Cpp   string
+	Astes    *Ast
+	Cpp      string
+	Programs []*ProgramInfoCompile
+	Public   *ProgramInfoCompile
+}
+type ProgramInfoCompile struct {
+	scopes      []*ScopeInfoCompile
+	globalScope *ScopeInfoCompile
+	funcs       []*FunctionInfoCompile
+	//NameProgram string
+}
+type VarInfoCompile struct {
+	Type string
+	Name string
+}
+type ScopeInfoCompile struct {
+	vars []*VarInfoCompile
+}
+type FunctionInfoCompile struct {
+	ReturnType string
+	Name       string
+	// params types
+	Params []string
+	Public bool
 }
 
 func NewCompiler(ast *Ast) *Compiler {
 	return &Compiler{
-		Astes: ast,
+		Astes:    ast,
+		Cpp:      "",
+		Programs: []*ProgramInfoCompile{},
+		Public:   &ProgramInfoCompile{},
 	}
 }
-func (c *Compiler) preprocessType(str string) string {
-	if str == "Int" {
-		return "int"
-	} else if str == "Bool" {
-		return "bool"
+func (com *Compiler) Compile() {
+	h := com.Astes.Nodes.(ProgramBody)
+	code := ""
+	program := &ProgramInfoCompile{
+		scopes: []*ScopeInfoCompile{},
+		globalScope: &ScopeInfoCompile{
+			vars: []*VarInfoCompile{},
+		},
+		funcs: []*FunctionInfoCompile{},
+
+		//NameProgram: v.Kind().,
 	}
-	return str
+	for _, v := range h.Body {
+
+		code += com.GenCode(v, program, program.globalScope)
+	}
+	com.Cpp = code
 }
-func (c *Compiler) compilePrimaryExpressions(epr Stmt) {
 
-	if epr.Kind() == TypeLiteralNumber {
-		c.Cpp += fmt.Sprint(epr.(LiteralNumeric).Value())
-	} else if epr.Kind() == TypeParent {
-		c.Cpp += "("
-		for i, e := range epr.(Parent).Children {
-
-			c.compilePrimaryExpressions(e)
-			if i != len(epr.(Parent).Children)-1 {
-				c.Cpp += ","
-			}
+func (com *Compiler) GenCode(h Stmt, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
+	if h.Kind() == TypeCPP {
+		o := h.(CppCode)
+		return o.Code
+	} else if h.Kind() == TypeLiteralNumber {
+		return fmt.Sprint(h.(LiteralNumeric).Val)
+	} else if h.Kind() == TypeLiteralString {
+		return fmt.Sprintf(" Str(\"%s\") ", h.(LiteralString).Val)
+	} else if h.Kind() == TypeBinaryExpression {
+		o := h.(BinaryExpression)
+		l := ""
+		l += com.GenCode(o.Left, pro, scope)
+		if o.Operator == PLUS {
+			l += "+"
+		} else if o.Operator == MINUS {
+			l += "-"
+		} else if o.Operator == MULTIPLY {
+			l += "*"
+		} else if o.Operator == DIVIDE {
+			l += "/"
+		} else if o.Operator == PORCENT {
+			l += "%"
 		}
-		//c.compilePrimaryExpressions(epr.(Parent).Children)
-		c.Cpp += ")"
-	} else if epr.Kind() == TypeIdentify {
-		c.Cpp += epr.(Identify).Val.(string)
-	} else if epr.Kind() == TypeLiteralString {
-		c.Cpp += fmt.Sprintf("Str(%s)", epr.(LiteralString).Val)
-	} else if epr.Kind() == TypeAssingDeclaration {
-		f := epr.(AssingDeclaration)
-		c.Cpp += f.Symbol.(Identify).Val.(string)
-		c.Cpp += "="
-		c.compilePrimaryExpressions(f.Val.(Stmt))
-		c.Cpp += ";"
-	} else if epr.Kind() == TypeLiteralString {
-		c.Cpp += fmt.Sprintf("\"%s\"", epr.(LiteralString).Val)
-	} else if epr.Kind() == TypeVarDeclaration {
-		o := epr.(VarDeclaration)
-
-		c.Cpp += c.preprocessType(o.Type.(AssingType).Type.(string)) + " "
-		c.Cpp += o.Symbol.(Identify).Val.(string)
-		c.Cpp += "="
-
-		c.compilePrimaryExpressions(o.Val.(Stmt))
-		if !strings.HasSuffix(c.Cpp, ";") {
-			c.Cpp += ";"
-
+		l += com.GenCode(o.Right, pro, scope)
+		return l
+	} else if h.Kind() == TypeBody {
+		_, p := com.toCppBody(h.(BodyStatement), pro, scope)
+		return p
+	} else if h.Kind() == TypeFunctionCall {
+		o := h.(FunctionCall)
+		return com.toCppFunctionCall(o, pro, scope)
+	} else if h.Kind() == TypeFunction {
+		o := h.(Function)
+		fun := &FunctionInfoCompile{
+			ReturnType: o.Return.Val.(string),
+			Name:       o.Symbol.Val.(string),
+			Public:     o.Public,
 		}
-
-	} else if epr.Kind() == TypeReturn {
-		c.Cpp += "return "
-		c.compilePrimaryExpressions(epr.(Return).Val.(Stmt))
-
-		c.Cpp += ";"
-	} else if epr.Kind() == TypeBody {
-		pilo := epr.(BodyStatement)
-		c.Cpp += "{"
-		for _, e := range pilo.Body {
-
-			c.compilePrimaryExpressions(e)
-		}
-		c.Cpp += "}"
-	} else if epr.Kind() == TypeArgument {
-		c.Cpp += epr.(Argument).Type.Type.(string) + " "
-		c.Cpp += epr.(Argument).Symbol.Val.(string) + " "
-
-	} else if epr.Kind() == TypeFunctionCall {
-		o := epr.(FunctionCall)
-		c.Cpp += o.Symbol.Val.(string)
-		p := Parent{
-			Children: o.Arguments,
-		}
-		c.compilePrimaryExpressions(p)
-		c.Cpp += ";"
-	} else if epr.Kind() == TypeFunction {
-		f := epr.(Function)
-		c.Cpp += c.preprocessType(f.Return.Val.(string)) + " "
-		c.Cpp += f.Symbol.Val.(string) + "("
-		for i, e := range f.Arguments {
-			c.compilePrimaryExpressions(e)
-			if i != len(f.Arguments)-1 {
-				c.Cpp += ","
-			}
-		}
-		c.Cpp += ")"
-		c.compilePrimaryExpressions(f.Body)
-	} else if epr.Kind() == TypeVarDeclarationClass {
-		o := epr.(VariableClass)
-		if o.Public {
-			c.Cpp += "public: "
+		if fun.Public {
+			com.Public.funcs = append(com.Public.funcs, fun)
 		} else {
-			c.Cpp += "private: "
+			pro.funcs = append(pro.funcs, fun)
 		}
-		c.Cpp += fmt.Sprintf("%s %s;", c.preprocessType(o.Type.Type.(string)), o.Symbol.Val.(string))
-	} else if epr.Kind() == TypeClass {
-		o := epr.(Class)
-		c.Cpp += "class " + o.Symbol.Val.(string) + "{"
-		for _, e := range o.Cpps {
-			c.compilePrimaryExpressions(e)
+		for _, p := range o.Arguments {
+			fun.Params = append(fun.Params, p.Type.Type.(string))
 		}
-		for _, e := range o.Vars {
-			c.compilePrimaryExpressions(e)
-		}
-		for _, e := range o.Methods {
-			if e.Symbol.Val.(string) != "New" {
-				c.compilePrimaryExpressions(e)
-			} else {
-
-				c.Cpp += "public: " + epr.(Class).Symbol.Val.(string) + " ("
-				for i, e90 := range e.Arguments {
-					c.compilePrimaryExpressions(e90)
-					if i != len(e.Arguments)-1 {
-						c.Cpp += ","
-					}
-				}
-				c.Cpp += ")"
-				c.compilePrimaryExpressions(e.Body)
-			}
-		}
-		c.Cpp += "};"
-	} else if epr.Kind() == TypeCPP {
-		c.Cpp += epr.(CppCode).Code
-	} else if epr.Kind() == TypeBinaryExpression {
-		f := epr.(BinaryExpression)
-		if f.Operator == PLUS {
-			c.compilePrimaryExpressions(f.Left)
-			c.Cpp += " + "
-			c.compilePrimaryExpressions(f.Right)
-		} else if f.Operator == MINUS {
-			c.compilePrimaryExpressions(f.Left)
-			c.Cpp += " - "
-			c.compilePrimaryExpressions(f.Right)
-		} else if f.Operator == MULTIPLY {
-			c.compilePrimaryExpressions(f.Left)
-			c.Cpp += " * "
-			c.compilePrimaryExpressions(f.Right)
-		} else if f.Operator == DIVIDE {
-			c.compilePrimaryExpressions(f.Left)
-			c.Cpp += " / "
-			c.compilePrimaryExpressions(f.Right)
-		} else if f.Operator == PORCENT {
-			c.compilePrimaryExpressions(f.Left)
-			c.Cpp += " % "
-			c.compilePrimaryExpressions(f.Right)
-		}
+		return com.toCppFunction(o, *fun, pro, scope)
 	} else {
-		panic(epr.Kind())
+		panic("Invalid sentance: " + fmt.Sprint(h.Kind()))
 	}
-}
-func (c *Compiler) Compile() {
-	program := c.Astes.Nodes.(ProgramBody)
-	for _, e := range program.Body {
-		c.compilePrimaryExpressions(e)
-	}
+
 }

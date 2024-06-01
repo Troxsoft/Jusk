@@ -6,7 +6,6 @@ import (
 	"jusklang/pkg"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func main() {
@@ -37,11 +36,12 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		k := strings.Split(os.Args[1][:len(os.Args[1])-2], "/")
-		cmd := exec.Command("g++", os.Args[1][:len(os.Args[1])-2]+"cpp", "-o", k[len(k)-1]+"exe")
+
+		cmd := exec.Command("g++", os.Args[1][:len(os.Args[1])-2]+"cpp", "-o", os.Args[1][:len(os.Args[1])-3])
 		err = cmd.Run()
+
 		if err != nil {
-			panic(err)
+			panic(cmd.String() + "   " + err.Error())
 		}
 		//fmt.Println(jusk.Compile())
 	}
