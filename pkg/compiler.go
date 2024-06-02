@@ -1,6 +1,8 @@
 package pkg
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Compiler struct {
 	Astes    *Ast
@@ -12,11 +14,17 @@ type ProgramInfoCompile struct {
 	scopes      []*ScopeInfoCompile
 	globalScope *ScopeInfoCompile
 	funcs       []*FunctionInfoCompile
+	structs     []*StructInfoCompile
 	//NameProgram string
 }
 type VarInfoCompile struct {
 	Type string
 	Name string
+}
+type VarStructInfoCompile struct {
+	Type   string
+	Name   string
+	Public bool
 }
 type ScopeInfoCompile struct {
 	vars []*VarInfoCompile
@@ -27,6 +35,12 @@ type FunctionInfoCompile struct {
 	// params types
 	Params []string
 	Public bool
+}
+type StructInfoCompile struct {
+	Name  string
+	Funcs []FunctionInfoCompile
+	Vars  []VarStructInfoCompile
+	Cpps  []CppCode
 }
 
 func NewCompiler(ast *Ast) *Compiler {
@@ -45,25 +59,45 @@ func (com *Compiler) Compile() {
 		globalScope: &ScopeInfoCompile{
 			vars: []*VarInfoCompile{},
 		},
-		funcs: []*FunctionInfoCompile{},
+		funcs:   []*FunctionInfoCompile{},
+		structs: []*StructInfoCompile{},
 
 		//NameProgram: v.Kind().,
 	}
-	for _, v := range h.Body {
+	if h.PkgName != "main" {
+		code += fmt.Sprintf("#ifndef _%s_\n", h.PkgName)
+		code += fmt.Sprintf("#define _%s_\n", h.PkgName)
+		code += "\nnamespace " + h.PkgName + "  {\n"
+		for _, v := range h.Body {
 
-		code += com.GenCode(v, true, program, program.globalScope)
+			code += com.GenCode(v, true, program, program.globalScope)
+		}
+		code += "\n}\n"
+		code += "\n#endif\n"
+		com.Cpp = code
+	} else {
+		code += fmt.Sprintf("#ifndef _%s_\n", h.PkgName)
+		code += fmt.Sprintf("#define _%s_\n", h.PkgName)
+		for _, v := range h.Body {
+
+			code += com.GenCode(v, true, program, program.globalScope)
+		}
+		code += "\n#endif\n"
+		com.Cpp = code
 	}
-	com.Cpp = code
+
 }
 
 func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
 	if h.Kind() == TypeCPP {
 		o := h.(CppCode)
 		return o.Code
+	} else if h.Kind() == TypeParent {
+		return fmt.Sprintf("(%s)", com.GenCode(h.(Parent).Children[0], true, pro, scope))
 	} else if h.Kind() == TypeLiteralNumber {
 		return fmt.Sprint(h.(LiteralNumeric).Val)
 	} else if h.Kind() == TypeLiteralString {
-		return fmt.Sprintf(" Str(\"%s\") ", h.(LiteralString).Val)
+		return fmt.Sprintf(" \"%s\" ", h.(LiteralString).Val)
 	} else if h.Kind() == TypeBinaryExpression {
 		o := h.(BinaryExpression)
 		l := ""
@@ -103,6 +137,25 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 	} else if h.Kind() == TypeBody {
 		_, p := com.toCppBody(h.(BodyStatement), pro, scope)
 		return p
+	} else if h.Kind() == TypeStruct {
+		o := h.(Struct)
+		if com.getStruct(o.Symbol.Val.(string), pro) != nil {
+			panic(fmt.Sprintf("%s struct already exists", o.Symbol.Val.(string)))
+		}
+		infoCompile := &StructInfoCompile{
+			Name: o.Symbol.Val.(string),
+			Cpps: o.Cpps,
+		}
+		for _, v := range o.Vars {
+			infoCompile.Vars = append(infoCompile.Vars, VarStructInfoCompile{
+				Type:   v.Type.Type.(string),
+				Name:   v.Symbol.Val.(string),
+				Public: v.Public,
+			})
+		}
+
+		pro.structs = append(pro.structs, infoCompile)
+		return com.toCppStruct(*infoCompile, pro, scope)
 	} else if h.Kind() == TypeReturn {
 		o := h.(Return)
 		return com.toCppReturn(o, pro, scope)

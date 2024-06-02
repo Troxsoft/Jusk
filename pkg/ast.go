@@ -13,15 +13,17 @@ const (
 	TypeAssingDeclaration
 	TypeAsingType
 	TypeVarDeclaration
-	TypeVarDeclarationClass
+	TypeVarDeclarationStruct
 	TypeParent
 	TypeBody
-	TypeClass
+	TypeStruct
 	TypeCPP
 	TypeArgument
 	TypeFunction
 	TypeReturn
 	TypeFunctionCall
+	TypeImport
+	TypePointStmt
 )
 
 type LiteralNumeric struct {
@@ -34,7 +36,16 @@ type LiteralString struct {
 type Return struct {
 	Val any
 }
+type Import struct {
+	Val any
+}
 
+func (c *Import) Kind() int {
+	return TypeImport
+}
+func (c *Import) Value() any {
+	return c.Val
+}
 func (l Return) Value() any {
 	return l.Val
 }
@@ -84,6 +95,17 @@ type BinaryExpression struct {
 	Operator int
 	Right    Expr
 }
+type PointStmt struct {
+	Children any
+	Father   any
+}
+
+func (s *PointStmt) Kind() int {
+	return TypePointStmt
+}
+func (s *PointStmt) Value() any {
+	return nil
+}
 
 type Identify struct {
 	Val any
@@ -107,7 +129,8 @@ func (l BinaryExpression) Value() any {
 }
 
 type ProgramBody struct {
-	Body []Stmt
+	Body    []Stmt
+	PkgName string
 }
 type AssingType struct {
 	Type any
@@ -163,6 +186,13 @@ func (a *Ast) ProduceAst() {
 	program := ProgramBody{
 		Body: []Stmt{},
 	}
+	if a.actual().Type != PACKAGE && a.Tokens[1].Type != SYMBOL {
+		panic(fmt.Sprintf("Expectative package name but found: %+v , %+v", a.actual(), a.Tokens[1]))
+	}
+	name := a.Tokens[1].Value.(string)
+	program.PkgName = name
+	a.next()
+	a.next()
 	for !a.isEOF() {
 
 		program.Body = append(program.Body, a.parseStmt())
@@ -194,12 +224,29 @@ func (a *Ast) parseVarDeclaration() Stmt {
 }
 func (a *Ast) parseStmt() Stmt {
 	typeee := a.actual().Type
-
+	//fmt.Println(typeee)
 	if typeee == VAR {
 		return a.parseVarDeclaration()
+	} else if typeee == SYMBOL && a.Tokens[1].Type == POINT && a.Tokens[2].Type == SYMBOL {
+		a1 := a.actual()
+		a3 := a.Tokens[2]
+		a.next()
+		a.next()
+		a.next()
+		return &PointStmt{
+			Children: a1.Value,
+			Father:   a3.Value,
+		}
 	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == SYMBOL {
 		vari := a.parseVariableClass()
 		return vari
+	} else if typeee == IMPORT && a.Tokens[1].Type == STRING {
+		pedro := a.Tokens[1]
+		a.next()
+		a.next()
+		return &Import{
+			Val: pedro.Value,
+		}
 	} else if typeee == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {
 
 		return a.parseFunctionCall()
@@ -207,8 +254,8 @@ func (a *Ast) parseStmt() Stmt {
 
 		body := a.parseBody()
 		return body
-	} else if typeee == CLASS {
-		class := a.parseClass()
+	} else if typeee == STRUCT {
+		class := a.parseStruct()
 		return class
 	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == FUNCTION {
 		vari := a.parseFunction()
@@ -348,8 +395,6 @@ func (a *Ast) parsePrimaryExpr() Expr {
 
 						ds = append(ds, e)
 						a.next()
-					} else {
-						panic("expectative \",\"")
 					}
 				} else {
 					ds = append(ds, e)

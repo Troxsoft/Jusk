@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (j *Jusk) Tokenize() error {
@@ -37,8 +38,43 @@ func (j *Jusk) Tokenize() error {
 					//break
 				}
 			}
-			str := strings.ReplaceAll(j.Code[start:end], `\n`, "\n")
-			str = strings.ReplaceAll(str, `\"`, "\"")
+			//str = strings.ReplaceAll(str, `\`, "\\")
+			r00 := time.Now().String()
+			str := strings.ReplaceAll(j.Code[start:end], `\"`, "\"")
+			str = strings.ReplaceAll(str, `\\n`, `@#@@sq`+r00)
+
+			str = strings.ReplaceAll(str, `\n`, "\n")
+			str = strings.ReplaceAll(str, `@#@@sq`+r00, "\\n")
+			toks = append(toks, NewToken(STRING, str))
+			i = end + 1
+
+		} else if ac == '`' {
+
+			start := i + 1
+			end := i + 1
+			for (end < len(j.Code) && j.Code[end] != '`') || (end < len(j.Code) && j.Code[end] != '`' && string(j.Code[end-1]) != `\`) {
+
+				if end+1 < len(j.Code) {
+
+					if end+1 < len(j.Code) && j.Code[end] == '\\' && j.Code[end+1] == '`' {
+						end++
+						end++
+					} else {
+
+						end++
+					}
+				} else {
+					end++
+					panic("Expectative close string but found:EOF")
+					//break
+				}
+			}
+			r00 := time.Now().String()
+			str := strings.ReplaceAll(j.Code[start:end], "\\`", "`")
+			str = strings.ReplaceAll(str, `\\n`, `@#@@sq`+r00)
+
+			str = strings.ReplaceAll(str, `\n`, "\n")
+			str = strings.ReplaceAll(str, `@#@@sq`+r00, "\\n")
 
 			toks = append(toks, NewToken(STRING, str))
 			i = end + 1
@@ -49,12 +85,18 @@ func (j *Jusk) Tokenize() error {
 		} else if i+5 < len(j.Code) && ac == 'f' && j.Code[i+1] == 'n' && j.Code[i+2] == ' ' {
 			toks = append(toks, NewToken(FUNCTION, "function"))
 			i += 2
-		} else if i+5 < len(j.Code) && ac == 'c' && j.Code[i+1] == 'l' && j.Code[i+2] == 'a' && j.Code[i+3] == 's' && j.Code[i+4] == 's' && j.Code[i+5] == ' ' {
-			toks = append(toks, NewToken(CLASS, "class"))
-			i += 5
+		} else if i+6 < len(j.Code) && ac == 's' && j.Code[i+1] == 't' && j.Code[i+2] == 'r' && j.Code[i+3] == 'u' && j.Code[i+4] == 'c' && j.Code[i+5] == 't' && j.Code[i+6] == ' ' {
+			toks = append(toks, NewToken(STRUCT, "struct"))
+			i += 7
+		} else if i+8 < len(j.Code) && ac == '@' && j.Code[i+1] == 'i' && j.Code[i+2] == 'm' && j.Code[i+3] == 'p' && j.Code[i+4] == 'o' && j.Code[i+5] == 'r' && j.Code[i+6] == 't' && j.Code[i+7] == ' ' {
+			toks = append(toks, NewToken(IMPORT, "@import"))
+			i += 8
 		} else if i+3 < len(j.Code) && ac == 'v' && j.Code[i+1] == 'a' && j.Code[i+2] == 'r' && j.Code[i+3] == ' ' {
 			toks = append(toks, NewToken(VAR, "var"))
 			i += 3
+		} else if i+4 < len(j.Code) && ac == '@' && j.Code[i+1] == 'p' && j.Code[i+2] == 'k' && j.Code[i+3] == 'g' && j.Code[i+4] == ' ' {
+			toks = append(toks, NewToken(PACKAGE, "@pkg"))
+			i += 5
 		} else if i+3 < len(j.Code) && ac == '@' && j.Code[i+1] == 'c' && j.Code[i+2] == 'p' && j.Code[i+3] == 'p' {
 			toks = append(toks, NewToken(CPP, "@cpp"))
 			i += 4
@@ -89,6 +131,9 @@ func (j *Jusk) Tokenize() error {
 			i++
 		} else if ac == '%' {
 			toks = append(toks, NewToken(PORCENT, "%"))
+			i++
+		} else if ac == '.' {
+			toks = append(toks, NewToken(POINT, "."))
 			i++
 		} else if ac == '-' {
 			toks = append(toks, NewToken(MINUS, "-"))

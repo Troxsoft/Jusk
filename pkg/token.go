@@ -18,17 +18,18 @@ const (
 	OPEN_BRACKET
 	CLOSE_BRACKET
 	VAR
+	POINT
 	TWO_POINTS
 	EQUAL
 	PRIVATE
 	PUBLIC
-	CLASS
+	STRUCT
 	CPP
 	FUNCTION
 	RETURN
 	COMMA
 	PACKAGE
-	FNPO
+	IMPORT
 )
 
 func isValidSize(s string, index, l int) bool {

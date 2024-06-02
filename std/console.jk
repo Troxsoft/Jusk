@@ -1,0 +1,5 @@
+@pkg std
+@cpp("#include <iostream>\n")
+pub fn print(text:Str){
+    @cpp(`std::cout<<text;`)
+}

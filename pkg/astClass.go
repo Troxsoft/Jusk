@@ -2,36 +2,36 @@ package pkg
 
 import "fmt"
 
-type VariableClass struct {
+type VariableStruct struct {
 	Symbol Identify
 	Type   AssingType
 	Public bool
 }
 
-func (v VariableClass) Kind() int {
-	return TypeVarDeclarationClass
+func (v VariableStruct) Kind() int {
+	return TypeVarDeclarationStruct
 }
 
 type BodyStatement struct {
 	Body []Stmt
 }
 
-type Class struct {
+type Struct struct {
 	Symbol  Identify
-	Vars    []VariableClass
+	Vars    []VariableStruct
 	Methods []Function
 	Cpps    []CppCode
 }
 
-func (c Class) Kind() int {
-	return TypeClass
+func (c Struct) Kind() int {
+	return TypeStruct
 }
 
 // Kind implements Stmt.
 func (b BodyStatement) Kind() int {
 	return TypeBody
 }
-func (a *Ast) parseVariableClass() VariableClass {
+func (a *Ast) parseVariableClass() VariableStruct {
 	p := a.actual()
 	public := true
 	if p.Type == PUBLIC {
@@ -57,7 +57,7 @@ func (a *Ast) parseVariableClass() VariableClass {
 	}
 
 	a.next()
-	return VariableClass{
+	return VariableStruct{
 		Symbol: Identify{
 			Val: name.Value,
 		},
@@ -68,7 +68,7 @@ func (a *Ast) parseVariableClass() VariableClass {
 	}
 }
 
-func (a *Ast) parseClass() Class {
+func (a *Ast) parseStruct() Struct {
 	//a.next()
 	a.next()
 	className := a.actual()
@@ -76,8 +76,8 @@ func (a *Ast) parseClass() Class {
 	if className.Type != SYMBOL {
 		panic(fmt.Sprintf("Expectative class name but found: %+v", className))
 	}
-	class := Class{
-		Vars: []VariableClass{},
+	class := Struct{
+		Vars: []VariableStruct{},
 		Symbol: Identify{
 			Val: className.Value,
 		},
@@ -89,8 +89,8 @@ func (a *Ast) parseClass() Class {
 	}
 	bod := body.(BodyStatement)
 	for _, v := range bod.Body {
-		if v.Kind() == TypeVarDeclarationClass {
-			class.Vars = append(class.Vars, v.(VariableClass))
+		if v.Kind() == TypeVarDeclarationStruct {
+			class.Vars = append(class.Vars, v.(VariableStruct))
 		} else if v.Kind() == TypeFunction {
 			class.Methods = append(class.Methods, v.(Function))
 		} else if v.Kind() == TypeCPP {
