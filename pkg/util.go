@@ -9,9 +9,11 @@ func isIntNumber(num byte) bool {
 func replaceTypesPrimitivesForCppType(c string) string {
 	if c == "Int" {
 		return "int"
-	} else if c == "Void"{
+	} else if c == "Void" {
 		return "void"
-	}else {
+	} else if c == "Str" {
+		return "std::string"
+	} else {
 		return c
 	}
 }

@@ -40,10 +40,10 @@ type Import struct {
 	Val any
 }
 
-func (c *Import) Kind() int {
+func (c Import) Kind() int {
 	return TypeImport
 }
-func (c *Import) Value() any {
+func (c Import) Value() any {
 	return c.Val
 }
 func (l Return) Value() any {
@@ -100,10 +100,10 @@ type PointStmt struct {
 	Father   any
 }
 
-func (s *PointStmt) Kind() int {
+func (s PointStmt) Kind() int {
 	return TypePointStmt
 }
-func (s *PointStmt) Value() any {
+func (s PointStmt) Value() any {
 	return nil
 }
 
@@ -227,15 +227,14 @@ func (a *Ast) parseStmt() Stmt {
 	//fmt.Println(typeee)
 	if typeee == VAR {
 		return a.parseVarDeclaration()
-	} else if typeee == SYMBOL && a.Tokens[1].Type == POINT && a.Tokens[2].Type == SYMBOL {
+	} else if typeee == SYMBOL && a.Tokens[1].Type == POINT {
 		a1 := a.actual()
-		a3 := a.Tokens[2]
 		a.next()
 		a.next()
-		a.next()
-		return &PointStmt{
-			Children: a1.Value,
-			Father:   a3.Value,
+		f := a.parseStmt()
+		return PointStmt{
+			Children: f,
+			Father:   a1.Value,
 		}
 	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == SYMBOL {
 		vari := a.parseVariableClass()
@@ -244,7 +243,7 @@ func (a *Ast) parseStmt() Stmt {
 		pedro := a.Tokens[1]
 		a.next()
 		a.next()
-		return &Import{
+		return Import{
 			Val: pedro.Value,
 		}
 	} else if typeee == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {

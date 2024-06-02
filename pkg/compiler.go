@@ -2,6 +2,9 @@ package pkg
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"strings"
 )
 
 type Compiler struct {
@@ -9,6 +12,7 @@ type Compiler struct {
 	Cpp      string
 	Programs []*ProgramInfoCompile
 	Public   *ProgramInfoCompile
+	Path     string
 }
 type ProgramInfoCompile struct {
 	scopes      []*ScopeInfoCompile
@@ -43,12 +47,13 @@ type StructInfoCompile struct {
 	Cpps  []CppCode
 }
 
-func NewCompiler(ast *Ast) *Compiler {
+func NewCompiler(ast *Ast, path string) *Compiler {
 	return &Compiler{
 		Astes:    ast,
 		Cpp:      "",
 		Programs: []*ProgramInfoCompile{},
 		Public:   &ProgramInfoCompile{},
+		Path:     path,
 	}
 }
 func (com *Compiler) Compile() {
@@ -64,9 +69,12 @@ func (com *Compiler) Compile() {
 
 		//NameProgram: v.Kind().,
 	}
+
 	if h.PkgName != "main" {
-		code += fmt.Sprintf("#ifndef _%s_\n", h.PkgName)
-		code += fmt.Sprintf("#define _%s_\n", h.PkgName)
+		code += fmt.Sprintf("#ifndef _%s_JK\n", h.PkgName)
+		code += fmt.Sprintf("#define _%s_JK\n", h.PkgName)
+		code += "#include <iostream>\n#include <string>\n"
+
 		code += "\nnamespace " + h.PkgName + "  {\n"
 		for _, v := range h.Body {
 
@@ -76,13 +84,12 @@ func (com *Compiler) Compile() {
 		code += "\n#endif\n"
 		com.Cpp = code
 	} else {
-		code += fmt.Sprintf("#ifndef _%s_\n", h.PkgName)
-		code += fmt.Sprintf("#define _%s_\n", h.PkgName)
+		code += "#include <iostream>\n#include <string>\n"
 		for _, v := range h.Body {
 
 			code += com.GenCode(v, true, program, program.globalScope)
 		}
-		code += "\n#endif\n"
+
 		com.Cpp = code
 	}
 
@@ -91,13 +98,77 @@ func (com *Compiler) Compile() {
 func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
 	if h.Kind() == TypeCPP {
 		o := h.(CppCode)
+		o.Code = strings.ReplaceAll(o.Code, "\n", `\n`)
+		o.Code = strings.ReplaceAll(o.Code, "@new_line", "\n")
 		return o.Code
+	} else if h.Kind() == TypeImport {
+		o := h.(Import)
+		if o.Val.(string) != "Std" {
+			dataB, err := os.ReadFile(com.Path + o.Val.(string))
+			if err != nil {
+				panic(err.Error())
+			}
+			data := string(dataB)
+			juskNww := NewJuskLang(data)
+			err = juskNww.Tokenize()
+			if err != nil {
+				panic(err.Error())
+			}
+			err = juskNww.GenerateAst()
+			if err != nil {
+				panic(err.Error())
+			}
+			p := juskNww.Compile(com.Path)
+			for _, v := range juskNww.Compiles.Public.funcs {
+				com.Public.funcs = append(com.Public.funcs, v)
+			}
+			for _, v := range juskNww.Compiles.Public.structs {
+				com.Public.structs = append(com.Public.structs, v)
+			}
+			return "\n" + p + "\n"
+		} else {
+			ee, _ := os.Executable()
+			var pp string
+			if runtime.GOOS == "windows" {
+				pp = ee[:len(ee)-8]
+			} else if runtime.GOOS == "linux" {
+				pp = ee[:len(ee)-4]
+			}
+			dataB, err := os.ReadFile(pp + "/std/std.jk")
+			if err != nil {
+				panic(err.Error())
+			}
+			data := string(dataB)
+			juskNww := NewJuskLang(data)
+			err = juskNww.Tokenize()
+			if err != nil {
+				panic(err.Error())
+			}
+			err = juskNww.GenerateAst()
+			if err != nil {
+				panic(err.Error())
+			}
+			p := juskNww.Compile(ee[:len(ee)-8] + "/std/")
+			for _, v := range juskNww.Compiles.Public.funcs {
+				com.Public.funcs = append(com.Public.funcs, v)
+			}
+			for _, v := range juskNww.Compiles.Public.structs {
+				com.Public.structs = append(com.Public.structs, v)
+			}
+			return "\n" + p + "\n"
+		}
+
+	} else if h.Kind() == TypePointStmt {
+		o := h.(PointStmt)
+		return fmt.Sprintf("%s::%s;", o.Father, com.GenCode(o.Children.(Stmt), true, pro, scope))
 	} else if h.Kind() == TypeParent {
 		return fmt.Sprintf("(%s)", com.GenCode(h.(Parent).Children[0], true, pro, scope))
 	} else if h.Kind() == TypeLiteralNumber {
 		return fmt.Sprint(h.(LiteralNumeric).Val)
 	} else if h.Kind() == TypeLiteralString {
-		return fmt.Sprintf(" \"%s\" ", h.(LiteralString).Val)
+		donaldTrump := fmt.Sprintf(" \"%s\" ", h.(LiteralString).Val)
+		donaldTrump = strings.ReplaceAll(donaldTrump, "\n", "\\n")
+		return donaldTrump
 	} else if h.Kind() == TypeBinaryExpression {
 		o := h.(BinaryExpression)
 		l := ""

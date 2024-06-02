@@ -3,14 +3,16 @@ package pkg
 import "strings"
 
 type Jusk struct {
-	Code   string
-	Tokens []Token
-	Astes  *Ast
+	Code     string
+	Tokens   []Token
+	Astes    *Ast
+	Compiles *Compiler
 }
 
-func (c *Jusk) Compile() string {
-	r := NewCompiler(c.Astes)
+func (c *Jusk) Compile(path string) string {
+	r := NewCompiler(c.Astes, path)
 	r.Compile()
+	c.Compiles = r
 	return r.Cpp
 }
 func NewJuskLang(code string) *Jusk {

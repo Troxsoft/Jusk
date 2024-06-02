@@ -5,6 +5,7 @@ import (
 	"jusklang/pkg"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func main() {
@@ -33,7 +34,15 @@ func main() {
 
 		// a, _ := json.MarshalIndent(jusk.Astes.Nodes, "", "   ")
 		// fmt.Printf("Ast %+v\n", string(a))
-		err = os.WriteFile(os.Args[1][:len(os.Args[1])-2]+"cpp", []byte(jusk.Compile()), 0777)
+		var pedro []string
+		if strings.Contains(os.Args[1], "/") {
+
+			pedro = strings.Split(os.Args[1], "/")
+		} else {
+			pedro = strings.Split(os.Args[1], "\\")
+
+		}
+		err = os.WriteFile(os.Args[1][:len(os.Args[1])-2]+"cpp", []byte(jusk.Compile(os.Args[1][:len(os.Args[1])-len(pedro[len(pedro)-1])])), 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -42,7 +51,7 @@ func main() {
 		//err = cmd.Run()
 
 		r, err := cmd.CombinedOutput()
-		fmt.Println(string(r))
+		fmt.Print(string(r))
 		if err != nil {
 			panic(cmd.String() + "   " + err.Error())
 		}
@@ -51,7 +60,7 @@ func main() {
 		//err = cmd.Run()
 
 		r, err = cmd.CombinedOutput()
-		fmt.Println(string(r))
+		fmt.Print(string(r))
 		if err != nil {
 			panic(cmd.String() + "   " + err.Error())
 		}
