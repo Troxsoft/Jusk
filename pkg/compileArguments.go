@@ -16,9 +16,9 @@ func (c *Compiler) toCppArgsFuncCall(h []Stmt, pro *ProgramInfoCompile, scope *S
 	for i, v := range h {
 		if i != len(h)-1 {
 
-			l += c.GenCode(v, pro, scope) + " , "
+			l += c.GenCode(v, false, pro, scope) + " , "
 		} else {
-			l += c.GenCode(v, pro, scope) + "  "
+			l += c.GenCode(v, false, pro, scope) + "  "
 		}
 	}
 	return l + ")"

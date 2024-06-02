@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"jusklang/pkg"
 	"os"
@@ -11,6 +10,7 @@ import (
 func main() {
 	defer func() {
 		if err := recover(); err != nil {
+
 			fmt.Println("Error: ", err)
 		}
 	}()
@@ -26,20 +26,31 @@ func main() {
 	if err != nil {
 		fmt.Println("Error: ", err.Error())
 	} else {
-		b, _ := json.MarshalIndent(jusk.Tokens, "", "  ")
-		fmt.Printf("Tokens %+v\n", string(b))
+		// b, _ := json.MarshalIndent(jusk.Tokens, "", "  ")
+		// fmt.Printf("Tokens %+v\n", string(b))
 		jusk.GenerateAst()
 
-		a, _ := json.MarshalIndent(jusk.Astes.Nodes, "", "   ")
-		fmt.Printf("Ast %+v\n", string(a))
+		// a, _ := json.MarshalIndent(jusk.Astes.Nodes, "", "   ")
+		// fmt.Printf("Ast %+v\n", string(a))
 		err = os.WriteFile(os.Args[1][:len(os.Args[1])-2]+"cpp", []byte(jusk.Compile()), 0777)
 		if err != nil {
 			panic(err)
 		}
 
 		cmd := exec.Command("g++", os.Args[1][:len(os.Args[1])-2]+"cpp", "-o", os.Args[1][:len(os.Args[1])-3])
-		err = cmd.Run()
+		//err = cmd.Run()
 
+		r, err := cmd.CombinedOutput()
+		fmt.Println(string(r))
+		if err != nil {
+			panic(cmd.String() + "   " + err.Error())
+		}
+
+		cmd = exec.Command(fmt.Sprintf("./%s", os.Args[1][:len(os.Args[1])-3]))
+		//err = cmd.Run()
+
+		r, err = cmd.CombinedOutput()
+		fmt.Println(string(r))
 		if err != nil {
 			panic(cmd.String() + "   " + err.Error())
 		}

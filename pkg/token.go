@@ -28,6 +28,7 @@ const (
 	RETURN
 	COMMA
 	PACKAGE
+	FNPO
 )
 
 func isValidSize(s string, index, l int) bool {

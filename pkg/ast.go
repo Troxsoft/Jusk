@@ -261,6 +261,13 @@ func (a *Ast) parseAdditiveExpr() Expr {
 func (a *Ast) parseMultiplyExpr() Expr {
 	// 3
 	left := a.parsePrimaryExpr()
+	if left.Kind() == TypeIdentify && a.actual().Type == OPEN_PARENT {
+		p := a.Tokens
+		a.Tokens = []Token{}
+		a.Tokens = append(a.Tokens, NewToken(SYMBOL, left.Value()))
+		a.Tokens = append(a.Tokens, p...)
+		left = a.parseFunctionCall()
+	}
 	// * / %
 	for a.actual().Type == MULTIPLY || a.actual().Type == DIVIDE || a.actual().Type == PORCENT {
 		operator := a.actual()
@@ -335,7 +342,7 @@ func (a *Ast) parsePrimaryExpr() Expr {
 				}
 			}
 			for {
-				e := a.parseExpr()
+				e := a.parseStmt()
 				if a.actual().Type != CLOSE_PARENT {
 					if a.actual().Type == COMMA {
 

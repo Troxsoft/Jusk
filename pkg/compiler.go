@@ -51,12 +51,12 @@ func (com *Compiler) Compile() {
 	}
 	for _, v := range h.Body {
 
-		code += com.GenCode(v, program, program.globalScope)
+		code += com.GenCode(v, true, program, program.globalScope)
 	}
 	com.Cpp = code
 }
 
-func (com *Compiler) GenCode(h Stmt, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
+func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
 	if h.Kind() == TypeCPP {
 		o := h.(CppCode)
 		return o.Code
@@ -67,7 +67,7 @@ func (com *Compiler) GenCode(h Stmt, pro *ProgramInfoCompile, scope *ScopeInfoCo
 	} else if h.Kind() == TypeBinaryExpression {
 		o := h.(BinaryExpression)
 		l := ""
-		l += com.GenCode(o.Left, pro, scope)
+		l += com.GenCode(o.Left.(Stmt), false, pro, scope)
 		if o.Operator == PLUS {
 			l += "+"
 		} else if o.Operator == MINUS {
@@ -79,14 +79,41 @@ func (com *Compiler) GenCode(h Stmt, pro *ProgramInfoCompile, scope *ScopeInfoCo
 		} else if o.Operator == PORCENT {
 			l += "%"
 		}
-		l += com.GenCode(o.Right, pro, scope)
+		l += com.GenCode(o.Right.(Stmt), false, pro, scope)
 		return l
+	} else if h.Kind() == TypeAssingDeclaration {
+
+		o := h.(AssingDeclaration)
+		if com.getVar(o.Symbol.(Identify).Val.(string), scope) == nil {
+			panic(fmt.Sprintf("%s not exists", o.Symbol.(Identify).Val.(string)))
+		}
+		return com.toCppVarAssing(o, pro, scope)
+	} else if h.Kind() == TypeVarDeclaration {
+
+		o := h.(VarDeclaration)
+		if com.getVar(o.Symbol.(Identify).Val.(string), scope) != nil {
+			panic(fmt.Sprintf("%s already exists", o.Symbol.(Identify).Val.(string)))
+		} else {
+			scope.vars = append(scope.vars, &VarInfoCompile{
+				Name: o.Symbol.(Identify).Val.(string),
+				Type: o.Type.(AssingType).Type.(string),
+			})
+		}
+		return com.toCppVar(o, pro, scope)
 	} else if h.Kind() == TypeBody {
 		_, p := com.toCppBody(h.(BodyStatement), pro, scope)
 		return p
+	} else if h.Kind() == TypeReturn {
+		o := h.(Return)
+		return com.toCppReturn(o, pro, scope)
 	} else if h.Kind() == TypeFunctionCall {
 		o := h.(FunctionCall)
-		return com.toCppFunctionCall(o, pro, scope)
+		return com.toCppFunctionCall(o, r, pro, scope)
+	} else if h.Kind() == TypeIdentify {
+		if com.getVar(h.(Identify).Val.(string), scope) == nil {
+			panic(fmt.Sprintf("%s not exists", h.(Identify).Val.(string)))
+		}
+		return h.(Identify).Val.(string)
 	} else if h.Kind() == TypeFunction {
 		o := h.(Function)
 		fun := &FunctionInfoCompile{

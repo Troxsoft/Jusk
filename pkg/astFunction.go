@@ -1,7 +1,5 @@
 package pkg
 
-import "fmt"
-
 type Argument struct {
 	Symbol Identify
 	Type   AssingType
@@ -109,7 +107,7 @@ func (a *Ast) parseFunction() Function {
 		Arguments: arguments,
 		Body:      k.(BodyStatement),
 		Public:    public,
-		Return:    Identify{Val: "void"},
+		Return:    Identify{Val: "Void"},
 	}
 
 }
@@ -120,10 +118,8 @@ func (a *Ast) parseFunctionCall() FunctionCall {
 	}
 	a.next()
 	p := a.parseStmt()
-	fmt.Println(p.Kind())
-	if p.Kind() != TypeParent {
-		panic("Expectative \"(\"")
-	}
+	//fmt.Println(p.Kind())
+
 	//a.next()
 	return FunctionCall{
 		Symbol:    name,

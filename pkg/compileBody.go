@@ -7,7 +7,7 @@ func (c *Compiler) toCppBody(b BodyStatement, pro *ProgramInfoCompile, scope *Sc
 	}
 	for _, v := range b.Body {
 
-		p += c.GenCode(v, pro, scopeNew)
+		p += c.GenCode(v, true, pro, scopeNew)
 	}
 
 	return scopeNew, p + "}"
