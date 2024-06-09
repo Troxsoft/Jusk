@@ -30,6 +30,18 @@ const (
 	COMMA
 	PACKAGE
 	IMPORT
+	COMMENT
+	IF
+	// logic op
+	COMPARE         // == igual
+	NOCOMPARE       // != no igual
+	GREATER         // > mayor
+	LESS            // < menor
+	COMPARE_GREATER // >= mayor o igual
+	BOOLEAN         // true or false
+
+	COMPARE_LESS // <= menor o igual
+
 )
 
 func isValidSize(s string, index, l int) bool {

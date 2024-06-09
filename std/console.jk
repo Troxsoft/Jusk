@@ -1,8 +1,0 @@
-@pkg "Console"
-@cpp("#include <iostream>@new_line")
-pub fn Print(text:Str){
-    @cpp(`std::cout<<text;`)
-}
-pub fn Println(text:Str){
-    @cpp(`std::cout<<text<<"\n";`)
-}

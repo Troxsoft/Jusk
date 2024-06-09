@@ -83,7 +83,7 @@ func (a *Ast) parseStruct() Struct {
 		},
 	}
 	a.next()
-	body := a.parseStmt()
+	body := a.parseStmt(false)
 	if body.Kind() != TypeBody {
 		panic(fmt.Sprintf("Expectative body class but found: %+v", body))
 	}
@@ -116,7 +116,7 @@ func (a *Ast) parseBody() BodyStatement {
 		if a.actual().Type == CLOSE_BRACKET {
 			break
 		}
-		body.Body = append(body.Body, a.parseStmt())
+		body.Body = append(body.Body, a.parseStmt(false))
 
 	}
 	a.next()

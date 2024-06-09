@@ -7,12 +7,18 @@ import (
 	"strings"
 )
 
+type ImportCompiler struct {
+	Name         string
+	OtherImports []*ImportCompiler
+	Compilers    *Compiler
+}
 type Compiler struct {
 	Astes    *Ast
 	Cpp      string
 	Programs []*ProgramInfoCompile
 	Public   *ProgramInfoCompile
 	Path     string
+	Imports  []*ImportCompiler
 }
 type ProgramInfoCompile struct {
 	scopes      []*ScopeInfoCompile
@@ -54,6 +60,7 @@ func NewCompiler(ast *Ast, path string) *Compiler {
 		Programs: []*ProgramInfoCompile{},
 		Public:   &ProgramInfoCompile{},
 		Path:     path,
+		Imports:  []*ImportCompiler{},
 	}
 }
 func (com *Compiler) Compile() {
@@ -96,6 +103,7 @@ func (com *Compiler) Compile() {
 }
 
 func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
+
 	if h.Kind() == TypeCPP {
 		o := h.(CppCode)
 		o.Code = strings.ReplaceAll(o.Code, "\n", `\n`)
@@ -103,68 +111,92 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 		return o.Code
 	} else if h.Kind() == TypeImport {
 		o := h.(Import)
-		if o.Val.(string) != "Std" {
-			dataB, err := os.ReadFile(com.Path + o.Val.(string))
+		var dataB []byte
+		var data string
+		var err error
+		var juskNww *Jusk
+		var ee string
+
+		if !strings.HasPrefix(o.Val.(string), "@") {
+
+			ee = com.Path + o.Val.(string)
+			dataB, err = os.ReadFile(com.Path + o.Val.(string))
 			if err != nil {
 				panic(err.Error())
 			}
-			data := string(dataB)
-			juskNww := NewJuskLang(data)
-			err = juskNww.Tokenize()
-			if err != nil {
-				panic(err.Error())
-			}
-			err = juskNww.GenerateAst()
-			if err != nil {
-				panic(err.Error())
-			}
-			p := juskNww.Compile(com.Path)
-			for _, v := range juskNww.Compiles.Public.funcs {
-				com.Public.funcs = append(com.Public.funcs, v)
-			}
-			for _, v := range juskNww.Compiles.Public.structs {
-				com.Public.structs = append(com.Public.structs, v)
-			}
-			return "\n" + p + "\n"
+			data = string(dataB)
 		} else {
-			ee, _ := os.Executable()
+			ee, _ = os.Executable()
+			ee = strings.ReplaceAll(ee, `\`, "/")
 			var pp string
+
 			if runtime.GOOS == "windows" {
 				pp = ee[:len(ee)-8]
 			} else if runtime.GOOS == "linux" {
 				pp = ee[:len(ee)-4]
 			}
-			dataB, err := os.ReadFile(pp + "/std/std.jk")
+			//p90000 := strings.Split(o.Val.(string)[1:], "/")
+
+			ee = pp + `lib/` + o.Val.(string)[1:]
+			dataB, err = os.ReadFile(ee)
+			lip := strings.Split(ee, "/")
+			ee = ee[:len(ee)-len(lip[len(lip)-1])]
+
 			if err != nil {
 				panic(err.Error())
 			}
-			data := string(dataB)
-			juskNww := NewJuskLang(data)
-			err = juskNww.Tokenize()
-			if err != nil {
-				panic(err.Error())
-			}
-			err = juskNww.GenerateAst()
-			if err != nil {
-				panic(err.Error())
-			}
-			p := juskNww.Compile(ee[:len(ee)-8] + "/std/")
-			for _, v := range juskNww.Compiles.Public.funcs {
-				com.Public.funcs = append(com.Public.funcs, v)
-			}
-			for _, v := range juskNww.Compiles.Public.structs {
-				com.Public.structs = append(com.Public.structs, v)
-			}
-			return "\n" + p + "\n"
+			data = string(dataB)
+
 		}
+		juskNww = NewJuskLang(data)
+		err = juskNww.Tokenize()
+		if err != nil {
+			panic(err.Error())
+		}
+		err = juskNww.GenerateAst()
+		if err != nil {
+			panic(err.Error())
+		}
+
+		p := juskNww.Compile(ee)
+		// for _, v := range juskNww.Compiles.Public.funcs {
+		// 	com.Public.funcs = append(com.Public.funcs, v)
+		// }
+		// for _, v := range juskNww.Compiles.Public.structs {
+		// 	com.Public.structs = append(com.Public.structs, v)
+		// }
+
+		for _, v := range com.Imports {
+			if v.Name == juskNww.Astes.Nodes.(ProgramBody).PkgName {
+				panic(fmt.Sprintf("Already import package: %s", juskNww.Astes.Nodes.(ProgramBody).PkgName))
+
+			}
+		}
+		com.Imports = append(com.Imports, &ImportCompiler{
+			Name:         juskNww.Astes.Nodes.(ProgramBody).PkgName,
+			OtherImports: juskNww.Compiles.Imports,
+			Compilers:    juskNww.Compiles,
+		})
+		return "\n" + p + "\n"
 
 	} else if h.Kind() == TypePointStmt {
 		o := h.(PointStmt)
-		return fmt.Sprintf("%s::%s;", o.Father, com.GenCode(o.Children.(Stmt), true, pro, scope))
+		var pkg *Compiler = nil
+		for _, v := range com.Imports {
+			if o.Father.(string) == v.Name {
+				pkg = v.Compilers
+			}
+		}
+		if pkg == nil {
+			panic(fmt.Sprintf("Unknown SYMBOL %s", o.Father.(string)))
+		}
+		return fmt.Sprintf("%s::%s", o.Father, pkg.GenCode(o.Children.(Stmt), true, pro, scope))
 	} else if h.Kind() == TypeParent {
 		return fmt.Sprintf("(%s)", com.GenCode(h.(Parent).Children[0], true, pro, scope))
 	} else if h.Kind() == TypeLiteralNumber {
 		return fmt.Sprint(h.(LiteralNumeric).Val)
+	} else if h.Kind() == TypeIf {
+		return com.parseIf(h.(IFCondition), pro, scope)
 	} else if h.Kind() == TypeLiteralString {
 		donaldTrump := fmt.Sprintf(" \"%s\" ", h.(LiteralString).Val)
 		donaldTrump = strings.ReplaceAll(donaldTrump, "\n", "\\n")
@@ -183,6 +215,18 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 			l += "/"
 		} else if o.Operator == PORCENT {
 			l += "%"
+		} else if o.Operator == COMPARE {
+			l += "=="
+		} else if o.Operator == LESS {
+			l += "<"
+		} else if o.Operator == GREATER {
+			l += ">"
+		} else if o.Operator == COMPARE_GREATER {
+			l += ">="
+		} else if o.Operator == COMPARE_LESS {
+			l += "<="
+		} else if o.Operator == NOCOMPARE {
+			l += "!="
 		}
 		l += com.GenCode(o.Right.(Stmt), false, pro, scope)
 		return l
@@ -233,6 +277,16 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 	} else if h.Kind() == TypeFunctionCall {
 		o := h.(FunctionCall)
 		return com.toCppFunctionCall(o, r, pro, scope)
+	} else if h.Kind() == TypeBoolean {
+
+		o := h.(Boolean)
+
+		if o.Bool {
+			return fmt.Sprintf(" true ")
+		} else {
+			return fmt.Sprintf(" false ")
+
+		}
 	} else if h.Kind() == TypeIdentify {
 		if com.getVar(h.(Identify).Val.(string), scope) == nil {
 			panic(fmt.Sprintf("%s not exists", h.(Identify).Val.(string)))

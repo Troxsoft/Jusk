@@ -11,7 +11,7 @@ func (cpp CppCode) Kind() int {
 }
 func (a *Ast) parseCpp() CppCode {
 	a.next()
-	f := a.parseStmt()
+	f := a.parseStmt(false)
 	if f.Kind() != TypeParent {
 		panic(fmt.Sprintf("Expectative body of c++ code but found: %+v", f))
 	}

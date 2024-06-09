@@ -11,6 +11,8 @@ func replaceTypesPrimitivesForCppType(c string) string {
 		return "int"
 	} else if c == "Void" {
 		return "void"
+	} else if c == "Bool" {
+		return "bool"
 	} else if c == "Str" {
 		return "std::string"
 	} else {

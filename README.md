@@ -4,10 +4,10 @@ A programing language that compile to c++
 ### Example for hello world
 ```rs
 @pkg main
-@import "Std"
+@import "@console/console.jk"
 pub fn main()Int{
-    Std.Console.Println("Hello World!!")
-} 
+   Console.Println("Hello World")
+}
 ```
 ### How to install? (require go,g++ installed)
 - ## 1 

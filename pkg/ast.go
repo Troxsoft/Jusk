@@ -24,6 +24,8 @@ const (
 	TypeFunctionCall
 	TypeImport
 	TypePointStmt
+	TypeBoolean
+	TypeIf
 )
 
 type LiteralNumeric struct {
@@ -195,7 +197,7 @@ func (a *Ast) ProduceAst() {
 	a.next()
 	for !a.isEOF() {
 
-		program.Body = append(program.Body, a.parseStmt())
+		program.Body = append(program.Body, a.parseStmt(false))
 	}
 	a.Nodes = program
 
@@ -206,14 +208,14 @@ func (a *Ast) parseVarDeclaration() Stmt {
 	if VarName.Type != SYMBOL {
 		panic("Expectative symbol")
 	}
-	f := a.parseStmt()
+	f := a.parseStmt(false)
 	//a.next()
 	//fmt.Printf("%+v\n", f)
 
 	typeVar := a.parseAssingTypeExpr()
 	//fmt.Printf("%+v\n", typeVar)
 	a.next()
-	assing := a.parseStmt()
+	assing := a.parseStmt(false)
 	//a.next()
 	return VarDeclaration{
 		Symbol: f,
@@ -222,20 +224,13 @@ func (a *Ast) parseVarDeclaration() Stmt {
 	}
 
 }
-func (a *Ast) parseStmt() Stmt {
+func (a *Ast) parseStmt(h bool) Stmt {
 	typeee := a.actual().Type
 	//fmt.Println(typeee)
 	if typeee == VAR {
 		return a.parseVarDeclaration()
-	} else if typeee == SYMBOL && a.Tokens[1].Type == POINT {
-		a1 := a.actual()
-		a.next()
-		a.next()
-		f := a.parseStmt()
-		return PointStmt{
-			Children: f,
-			Father:   a1.Value,
-		}
+	} else if typeee == IF {
+		return a.parseIf()
 	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == SYMBOL {
 		vari := a.parseVariableClass()
 		return vari
@@ -246,9 +241,6 @@ func (a *Ast) parseStmt() Stmt {
 		return Import{
 			Val: pedro.Value,
 		}
-	} else if typeee == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {
-
-		return a.parseFunctionCall()
 	} else if typeee == OPEN_BRACKET {
 
 		body := a.parseBody()
@@ -259,18 +251,62 @@ func (a *Ast) parseStmt() Stmt {
 	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == FUNCTION {
 		vari := a.parseFunction()
 		return vari
-	} else if typeee == CPP {
-		cpp := a.parseCpp()
-		return cpp
 	} else {
 		return a.parseExpr()
+
 	}
 }
 
 //return a.parseExpr()
 
 func (a *Ast) parseExpr() Expr {
-	return a.parseAssingExpr()
+	typeee := a.actual().Type
+	if typeee == SYMBOL && a.Tokens[1].Type == POINT {
+		//fmt.Printf("jnjunj %+v lol %+v \n ", a.actual(), a.Tokens[1])
+		a1 := a.actual()
+		a.next()
+		a.next()
+		f := a.parseStmt(false)
+
+		return PointStmt{
+			Children: f,
+			Father:   a1.Value,
+		}
+	} else if typeee == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {
+
+		return a.parseFunctionCall()
+	} else if typeee == CPP {
+		cpp := a.parseCpp()
+		return cpp
+	} else {
+
+		return a.parseAssingExpr()
+
+	}
+
+}
+func (a *Ast) parseAAAFuncCall() Expr {
+	if a.actual().Type == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {
+		return a.parseFunctionCall()
+	} else {
+		return a.parsePrimaryExpr()
+	}
+}
+func (a *Ast) parseAAAPointStmtAsExpr() Expr {
+	if a.actual().Type == SYMBOL && a.Tokens[1].Type == POINT {
+		a1 := a.actual()
+		a.next()
+		a.next()
+		f := a.parseExpr()
+
+		//a.Tokens = append([]Token{},,a.Tokens... )
+		return PointStmt{
+			Children: f,
+			Father:   a1.Value,
+		}
+	} else {
+		return a.parseAAAFuncCall()
+	}
 }
 func (a *Ast) parseAssingExpr() Expr {
 	left := a.parseAdditiveExpr()
@@ -279,7 +315,7 @@ func (a *Ast) parseAssingExpr() Expr {
 		//Eq := a.actual()
 
 		a.next()
-		right := a.parseExpr()
+		right := a.parseStmt(false)
 		left = AssingDeclaration{
 			Symbol: left,
 			Val:    right,
@@ -294,7 +330,7 @@ func (a *Ast) parseAdditiveExpr() Expr {
 	for a.actual().Type == PLUS || a.actual().Type == MINUS {
 		operator := a.actual()
 		a.next()
-		right := a.parseMultiplyExpr()
+		right := a.parseExpr()
 		left = BinaryExpression{
 			Left:     left,
 			Operator: operator.Type,
@@ -304,21 +340,32 @@ func (a *Ast) parseAdditiveExpr() Expr {
 	}
 	return left
 }
+
+func (a *Ast) parseLogicExpr() Expr {
+	left := a.parseAAAPointStmtAsExpr()
+
+	// * / %
+	for a.actual().Type == COMPARE || a.actual().Type == LESS || a.actual().Type == GREATER || a.actual().Type == COMPARE_GREATER || a.actual().Type == COMPARE_LESS || a.actual().Type == NOCOMPARE {
+		operator := a.actual()
+		a.next()
+		right := a.parseExpr()
+
+		left = BinaryExpression{
+			Left:     left.(Expr),
+			Operator: operator.Type,
+			Right:    right.(Expr),
+		}
+
+	}
+	return left.(Expr)
+}
 func (a *Ast) parseMultiplyExpr() Expr {
 	// 3
-	left := a.parsePrimaryExpr()
-	if left.Kind() == TypeIdentify && a.actual().Type == OPEN_PARENT {
-		p := a.Tokens
-		a.Tokens = []Token{}
-		a.Tokens = append(a.Tokens, NewToken(SYMBOL, left.Value()))
-		a.Tokens = append(a.Tokens, p...)
-		left = a.parseFunctionCall()
-	}
-	// * / %
+	left := a.parseLogicExpr()
 	for a.actual().Type == MULTIPLY || a.actual().Type == DIVIDE || a.actual().Type == PORCENT {
 		operator := a.actual()
 		a.next()
-		right := a.parsePrimaryExpr()
+		right := a.parseExpr()
 		left = BinaryExpression{
 			Left:     left,
 			Operator: operator.Type,
@@ -352,6 +399,13 @@ func (a *Ast) parseAssingTypeExpr() Expr {
 func (a *Ast) parsePrimaryExpr() Expr {
 	tok := a.actual()
 	switch tok.Type {
+	case BOOLEAN:
+		{
+			a.next()
+			return Boolean{
+				Bool: tok.Value.(bool),
+			}
+		}
 	case INT:
 		{
 			a.next()
@@ -388,7 +442,7 @@ func (a *Ast) parsePrimaryExpr() Expr {
 				}
 			}
 			for {
-				e := a.parseStmt()
+				e := a.parseStmt(false)
 				if a.actual().Type != CLOSE_PARENT {
 					if a.actual().Type == COMMA {
 
@@ -427,7 +481,7 @@ func (a *Ast) parsePrimaryExpr() Expr {
 		{
 			a.next()
 			return Return{
-				Val: a.parseStmt(),
+				Val: a.parseStmt(false),
 			}
 		}
 	default:

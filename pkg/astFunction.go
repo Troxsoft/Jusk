@@ -91,7 +91,7 @@ func (a *Ast) parseFunction() Function {
 	}
 	a.next()
 
-	k := a.parseStmt()
+	k := a.parseStmt(false)
 	if k.Kind() == TypeIdentify {
 		k40 := a.parseBody()
 		return Function{
@@ -112,18 +112,34 @@ func (a *Ast) parseFunction() Function {
 
 }
 
-func (a *Ast) parseFunctionCall() FunctionCall {
+func (a *Ast) parseFunctionCall() Expr {
 	name := Identify{
 		Val: a.actual().Value.(string),
 	}
 	a.next()
-	p := a.parseStmt()
+	p := a.parseStmt(false)
+
+	if p.Kind() == TypeBinaryExpression {
+		lo := p.(BinaryExpression)
+		args := p.(BinaryExpression).Left.(Parent).Children
+		return BinaryExpression{
+			Left: FunctionCall{
+				Symbol:    name,
+				Arguments: args,
+			},
+			Operator: lo.Operator,
+			Right:    lo.Right,
+		}
+
+	} else {
+		return FunctionCall{
+			Symbol:    name,
+			Arguments: p.(Parent).Children,
+		}
+
+	}
 	//fmt.Println(p.Kind())
 
 	//a.next()
-	return FunctionCall{
-		Symbol:    name,
-		Arguments: p.(Parent).Children,
-	}
 
 }

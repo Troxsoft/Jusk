@@ -1,5 +1,15 @@
 package main
 
+/*
+#cgo CFLAGS: -g -Wall
+#include <stdio.h>
+#include <stdlib.h>
+void execCommand(const char * comand);
+void execCommand(const char * comand){
+	system(comand);
+}
+*/
+import "C"
 import (
 	"fmt"
 	"jusklang/pkg"
@@ -25,6 +35,7 @@ func main() {
 	code := string(b)
 	jusk := pkg.NewJuskLang(code)
 	err = jusk.Tokenize()
+	//fmt.Printf("%+v\n", jusk.Tokens)
 	if err != nil {
 		fmt.Println("Error: ", err.Error())
 	} else {
@@ -55,15 +66,8 @@ func main() {
 		if err != nil {
 			panic(cmd.String() + "   " + err.Error())
 		}
+		C.execCommand(C.CString(fmt.Sprintf("%s", os.Args[1][:len(os.Args[1])-3])))
 
-		cmd = exec.Command(fmt.Sprintf("./%s", os.Args[1][:len(os.Args[1])-3]))
-		//err = cmd.Run()
-
-		r, err = cmd.CombinedOutput()
-		fmt.Print(string(r))
-		if err != nil {
-			panic(cmd.String() + "   " + err.Error())
-		}
 		//fmt.Println(jusk.Compile())
 	}
 

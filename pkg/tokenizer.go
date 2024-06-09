@@ -17,6 +17,45 @@ func (j *Jusk) Tokenize() error {
 			//toks = append(toks, NewToken(ENDLINE, "endline"))
 			line++
 			i++
+		} else if i+1 < len(j.Code) && ac == '<' && j.Code[i+1] == '=' {
+			toks = append(toks, NewToken(COMPARE_LESS, "<="))
+			i += 2
+		} else if i+1 < len(j.Code) && ac == '!' && j.Code[i+1] == '=' {
+			toks = append(toks, NewToken(NOCOMPARE, "!="))
+			i += 2
+		} else if i+4 < len(j.Code) && ac == 't' && j.Code[i+1] == 'r' && j.Code[i+2] == 'u' && j.Code[i+3] == 'e' && j.Code[i+4] == ' ' {
+			toks = append(toks, NewToken(BOOLEAN, true))
+			i += 5
+		} else if i+4 < len(j.Code) && ac == 'f' && j.Code[i+1] == 'a' && j.Code[i+2] == 'l' && j.Code[i+3] == 's' && j.Code[i+4] == 'e' && j.Code[i+5] == ' ' {
+			toks = append(toks, NewToken(BOOLEAN, false))
+			i += 6
+		} else if i+4 < len(j.Code) && ac == 't' && j.Code[i+1] == 'r' && j.Code[i+2] == 'u' && j.Code[i+3] == 'e' && j.Code[i+4] == '\n' {
+			toks = append(toks, NewToken(BOOLEAN, true))
+			i += 5
+		} else if i+4 < len(j.Code) && ac == 'f' && j.Code[i+1] == 'a' && j.Code[i+2] == 'l' && j.Code[i+3] == 's' && j.Code[i+4] == 'e' && j.Code[i+5] == '\n' {
+			toks = append(toks, NewToken(BOOLEAN, false))
+			i += 6
+		} else if i+4 < len(j.Code) && ac == 't' && j.Code[i+1] == 'r' && j.Code[i+2] == 'u' && j.Code[i+3] == 'e' && j.Code[i+4] == ')' {
+			toks = append(toks, NewToken(BOOLEAN, true))
+			i += 4
+		} else if i+4 < len(j.Code) && ac == 'f' && j.Code[i+1] == 'a' && j.Code[i+2] == 'l' && j.Code[i+3] == 's' && j.Code[i+4] == 'e' && j.Code[i+5] == ')' {
+			toks = append(toks, NewToken(BOOLEAN, false))
+			i += 5
+		} else if i+1 < len(j.Code) && ac == '>' && j.Code[i+1] == '=' {
+			toks = append(toks, NewToken(COMPARE_GREATER, ">="))
+			i += 2
+		} else if i+1 < len(j.Code) && ac == '=' && j.Code[i+1] == '=' {
+			toks = append(toks, NewToken(COMPARE, "=="))
+			i += 2
+		} else if i+1 < len(j.Code) && ac == 'i' && j.Code[i+1] == 'f' && j.Code[i+2] == ' ' {
+			toks = append(toks, NewToken(IF, "if"))
+			i += 3
+		} else if ac == '<' {
+			toks = append(toks, NewToken(LESS, "<"))
+			i++
+		} else if ac == '>' {
+			toks = append(toks, NewToken(GREATER, ">"))
+			i++
 		} else if ac == '"' {
 
 			start := i + 1
@@ -78,6 +117,16 @@ func (j *Jusk) Tokenize() error {
 
 			toks = append(toks, NewToken(STRING, str))
 			i = end + 1
+
+		} else if i+1 < len(j.Code) && ac == '/' && j.Code[i+1] == '/' {
+			startComment := i
+			endComment := startComment
+			for endComment < len(j.Code) && j.Code[endComment] != '\n' {
+				//fmt.Printf("'%s'\n", string(j.Code[endComment]))
+				endComment++
+			}
+
+			i = endComment
 
 		} else if i+6 < len(j.Code) && ac == 'r' && j.Code[i+1] == 'e' && j.Code[i+2] == 't' && j.Code[i+3] == 'u' && j.Code[i+4] == 'r' && j.Code[i+5] == 'n' && j.Code[i+6] == ' ' {
 			toks = append(toks, NewToken(RETURN, "return"))
