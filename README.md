@@ -1,5 +1,6 @@
 # Jusk
 A programing language that compile to c++
+*The language is missing many features*
 
 ### Example for hello world
 ```rs
