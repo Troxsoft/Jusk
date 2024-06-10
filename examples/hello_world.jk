@@ -1,0 +1,5 @@
+@pkg main
+@import "@console/console.jk"
+pub fn main()Int{
+   Console.Println("Hello World") // :D
+}
