@@ -24,7 +24,9 @@ go build jusk.go
 - ## 3 *(optional)*
 Add to path
 > # Progress
->> - [x] Boolean  
+>> - [x] Boolean
+>> - [x] Single line comment
+>> - [ ] Multi line comment  
 >> # Message Errors
 >> - [ ] error with code
 >> - [ ] util info
