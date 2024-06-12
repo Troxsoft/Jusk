@@ -3,7 +3,7 @@ package pkg
 import "strings"
 
 const (
-	VERSION = "0.1.0-experimental"
+	VERSION = "0.1.1-experimental"
 )
 
 type Jusk struct {
