@@ -17,8 +17,26 @@ func (j *Jusk) Tokenize() error {
 			//toks = append(toks, NewToken(ENDLINE, "endline"))
 			line++
 			i++
+		} else if i+5 < len(j.Code) && ac == '@' && j.Code[i+1] == 'o' && j.Code[i+2] == 'n' && j.Code[i+3] == 'l' && j.Code[i+4] == 'y' && j.Code[i+5] == ':' {
+			toks = append(toks, NewToken(ONLY, "@only:"))
+			i += 6 // windows
+		} else if i+5 < len(j.Code) && ac == 'l' && j.Code[i+1] == 'i' && j.Code[i+2] == 'n' && j.Code[i+3] == 'u' && j.Code[i+4] == 'x' && j.Code[i+5] == ' ' {
+			toks = append(toks, NewToken(LINUX, "linux"))
+			i += 6 // windows
+		} else if i+5 < len(j.Code) && ac == 'm' && j.Code[i+1] == 'a' && j.Code[i+2] == 'c' && j.Code[i+3] == 'o' && j.Code[i+4] == 's' && j.Code[i+5] == ' ' {
+			toks = append(toks, NewToken(MACOS, "macos"))
+			i += 6 // windows
+		} else if i+6 < len(j.Code) && ac == 'w' && j.Code[i+1] == 'i' && j.Code[i+2] == 'n' && j.Code[i+3] == 'd' && j.Code[i+4] == 'o' && j.Code[i+5] == 'w' && j.Code[i+6] == 's' && j.Code[i+7] == ' ' {
+			toks = append(toks, NewToken(WINDOWS, "windows"))
+			i += 7
+		} else if i+4 < len(j.Code) && ac == '@' && j.Code[i+1] == 't' && j.Code[i+2] == 'y' && j.Code[i+3] == 'p' && j.Code[i+4] == 'e' {
+			toks = append(toks, NewToken(TYPE, "@type"))
+			i += 5
 		} else if i+1 < len(j.Code) && ac == '<' && j.Code[i+1] == '=' {
 			toks = append(toks, NewToken(COMPARE_LESS, "<="))
+			i += 2
+		} else if i+1 < len(j.Code) && ac == ':' && j.Code[i+1] == '=' {
+			toks = append(toks, NewToken(NEWVAR, ":="))
 			i += 2
 		} else if i+1 < len(j.Code) && ac == '!' && j.Code[i+1] == '=' {
 			toks = append(toks, NewToken(NOCOMPARE, "!="))

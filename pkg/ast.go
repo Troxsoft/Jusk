@@ -26,7 +26,21 @@ const (
 	TypePointStmt
 	TypeBoolean
 	TypeIf
+	TypeType
+	TypeOnly
 )
+
+type Only struct {
+	OS   []int
+	Body BodyStatement
+}
+
+func (o Only) Value() any {
+	return o.OS
+}
+func (o Only) Kind() int {
+	return TypeOnly
+}
 
 type LiteralNumeric struct {
 	Val     any
@@ -73,9 +87,10 @@ func (l LiteralString) Kind() int {
 }
 
 type VarDeclaration struct {
-	Symbol any
-	Type   any
-	Val    any
+	Symbol         any
+	Type           any
+	Val            any
+	TypeOnCompiled bool
 }
 
 func (v VarDeclaration) Kind() int {
@@ -148,6 +163,17 @@ func (l AssingType) Value() any {
 	return l.Type
 }
 
+type TypeTypee struct {
+	Exprd Expr
+}
+
+func (d TypeTypee) Kind() int {
+	return TypeType
+}
+func (d TypeTypee) Value() any {
+	return nil
+}
+
 type AssingDeclaration struct {
 	Symbol any
 	Val    any
@@ -202,6 +228,7 @@ func (a *Ast) ProduceAst() {
 	a.Nodes = program
 
 }
+
 func (a *Ast) parseVarDeclaration() Stmt {
 	a.next()
 	VarName := a.actual()
@@ -218,9 +245,31 @@ func (a *Ast) parseVarDeclaration() Stmt {
 	assing := a.parseStmt(false)
 	//a.next()
 	return VarDeclaration{
-		Symbol: f,
-		Type:   typeVar,
-		Val:    assing,
+		Symbol:         f,
+		Type:           typeVar,
+		Val:            assing,
+		TypeOnCompiled: false,
+	}
+
+}
+func (a *Ast) parseVarDeclaration2() Stmt {
+	VarName := a.actual()
+	if VarName.Type != SYMBOL {
+		panic("Expectative symbol")
+	}
+	a.Tokens[1] = NewToken(EQUAL, "=")
+	a.next()
+	a.next()
+	//fmt.Printf("%+v\n", a.parseStmt(true))
+	//a.next()
+	return VarDeclaration{
+		Symbol: Identify{Val: VarName.Value.(string)},
+		Type:   nil,
+		Val: AssingDeclaration{
+			Symbol: Identify{Val: VarName.Value.(string)},
+			Val:    a.parseStmt(true),
+		},
+		TypeOnCompiled: true,
 	}
 
 }
@@ -229,6 +278,23 @@ func (a *Ast) parseStmt(h bool) Stmt {
 	//fmt.Println(typeee)
 	if typeee == VAR {
 		return a.parseVarDeclaration()
+	} else if typeee == SYMBOL && a.Tokens[1].Type == NEWVAR {
+		return a.parseVarDeclaration2()
+	} else if typeee == ONLY {
+		os := []int{}
+		a.next()
+		for a.actual().Type != OPEN_BRACKET {
+			if a.actual().Type != WINDOWS && a.actual().Type != LINUX && a.actual().Type != MACOS {
+				panic(fmt.Sprintf("Expectative: windows,linux or macos but found: %+v", a.actual()))
+			}
+			os = append(os, a.actual().Type)
+			a.next()
+		}
+		body := a.parseStmt(false)
+		return Only{
+			OS:   os,
+			Body: body.(BodyStatement),
+		}
 	} else if typeee == IF {
 		return a.parseIf()
 	} else if (typeee == PUBLIC || typeee == PRIVATE) && a.Tokens[1].Type == SYMBOL {
@@ -271,6 +337,16 @@ func (a *Ast) parseExpr() Expr {
 		return PointStmt{
 			Children: f,
 			Father:   a1.Value,
+		}
+	} else if typeee == TYPE && a.Tokens[1].Type == OPEN_PARENT {
+		a.next()
+		p := a.parseStmt(false)
+		if p.Kind() != TypeParent {
+			panic(fmt.Sprintf("Expectative: '()' but found %+v", p))
+		}
+		o := p.(Parent)
+		return TypeTypee{
+			Exprd: o.Children[0].(Expr),
 		}
 	} else if typeee == SYMBOL && a.Tokens[1].Type == OPEN_PARENT {
 

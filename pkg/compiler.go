@@ -19,6 +19,7 @@ type Compiler struct {
 	Public   *ProgramInfoCompile
 	Path     string
 	Imports  []*ImportCompiler
+	Father   *Compiler
 }
 type ProgramInfoCompile struct {
 	scopes      []*ScopeInfoCompile
@@ -53,7 +54,7 @@ type StructInfoCompile struct {
 	Cpps  []CppCode
 }
 
-func NewCompiler(ast *Ast, path string) *Compiler {
+func NewCompiler(ast *Ast, path string, father *Compiler) *Compiler {
 	return &Compiler{
 		Astes:    ast,
 		Cpp:      "",
@@ -61,6 +62,7 @@ func NewCompiler(ast *Ast, path string) *Compiler {
 		Public:   &ProgramInfoCompile{},
 		Path:     path,
 		Imports:  []*ImportCompiler{},
+		Father:   father,
 	}
 }
 func (com *Compiler) Compile() {
@@ -80,12 +82,12 @@ func (com *Compiler) Compile() {
 	if h.PkgName != "main" {
 		code += fmt.Sprintf("#ifndef _%s_JK\n", h.PkgName)
 		code += fmt.Sprintf("#define _%s_JK\n", h.PkgName)
-		code += "#include <iostream>\n#include <string>\n"
+		code += "#include <iostream>\n#include <string>\n#include <cstdlib>\n"
 
 		code += "\nnamespace " + h.PkgName + "  {\n"
 		for _, v := range h.Body {
 
-			code += com.GenCode(v, true, program, program.globalScope)
+			code += com.GenCode(v, true, program, program.globalScope, false)
 		}
 		code += "\n}\n"
 		code += "\n#endif\n"
@@ -94,7 +96,7 @@ func (com *Compiler) Compile() {
 		code += "#include <iostream>\n#include <string>\n"
 		for _, v := range h.Body {
 
-			code += com.GenCode(v, true, program, program.globalScope)
+			code += com.GenCode(v, true, program, program.globalScope, false)
 		}
 
 		com.Cpp = code
@@ -102,7 +104,7 @@ func (com *Compiler) Compile() {
 
 }
 
-func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
+func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *ScopeInfoCompile, afterPkg bool) string {
 
 	if h.Kind() == TypeCPP {
 		o := h.(CppCode)
@@ -158,7 +160,7 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 			panic(err.Error())
 		}
 
-		p := juskNww.Compile(ee)
+		p := juskNww.Compile(ee, com)
 		// for _, v := range juskNww.Compiles.Public.funcs {
 		// 	com.Public.funcs = append(com.Public.funcs, v)
 		// }
@@ -182,21 +184,38 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 	} else if h.Kind() == TypePointStmt {
 		o := h.(PointStmt)
 		var pkg *Compiler = nil
+
+		if com.Father != nil {
+			for _, v := range com.Father.Imports {
+				if o.Father.(string) == v.Name {
+					pkg = v.Compilers
+				}
+			}
+		}
 		for _, v := range com.Imports {
 			if o.Father.(string) == v.Name {
 				pkg = v.Compilers
 			}
 		}
+
 		if pkg == nil {
 			panic(fmt.Sprintf("Unknown SYMBOL %s", o.Father.(string)))
 		}
-		return fmt.Sprintf("%s::%s", o.Father, pkg.GenCode(o.Children.(Stmt), true, pro, scope))
+		if com.Father != nil {
+
+			pkg.Imports = append(pkg.Imports, com.Father.Imports...)
+		}
+		pol := fmt.Sprintf("%s::%s", o.Father, pkg.GenCode(o.Children.(Stmt), r, pro, scope, true))
+		if !afterPkg {
+			pol += ";"
+		}
+		return pol
 	} else if h.Kind() == TypeParent {
-		return fmt.Sprintf("(%s)", com.GenCode(h.(Parent).Children[0], true, pro, scope))
+		return fmt.Sprintf("(%s)", com.GenCode(h.(Parent).Children[0], true, pro, scope, afterPkg))
 	} else if h.Kind() == TypeLiteralNumber {
 		return fmt.Sprint(h.(LiteralNumeric).Val)
 	} else if h.Kind() == TypeIf {
-		return com.parseIf(h.(IFCondition), pro, scope)
+		return com.parseIf(h.(IFCondition), pro, scope, afterPkg)
 	} else if h.Kind() == TypeLiteralString {
 		donaldTrump := fmt.Sprintf(" \"%s\" ", h.(LiteralString).Val)
 		donaldTrump = strings.ReplaceAll(donaldTrump, "\n", "\\n")
@@ -204,7 +223,7 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 	} else if h.Kind() == TypeBinaryExpression {
 		o := h.(BinaryExpression)
 		l := ""
-		l += com.GenCode(o.Left.(Stmt), false, pro, scope)
+		l += com.GenCode(o.Left.(Stmt), false, pro, scope, afterPkg)
 		if o.Operator == PLUS {
 			l += "+"
 		} else if o.Operator == MINUS {
@@ -228,29 +247,73 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 		} else if o.Operator == NOCOMPARE {
 			l += "!="
 		}
-		l += com.GenCode(o.Right.(Stmt), false, pro, scope)
+		l += com.GenCode(o.Right.(Stmt), false, pro, scope, afterPkg)
 		return l
 	} else if h.Kind() == TypeAssingDeclaration {
 
 		o := h.(AssingDeclaration)
-		if com.getVar(o.Symbol.(Identify).Val.(string), scope) == nil {
+		hhh := com.getVar(o.Symbol.(Identify).Val.(string), scope, pro)
+		if hhh == nil {
 			panic(fmt.Sprintf("%s not exists", o.Symbol.(Identify).Val.(string)))
 		}
-		return com.toCppVarAssing(o, pro, scope)
+		p, err := com.getType(o.Val.(Expr), scope, pro)
+		if err != nil {
+			panic(err)
+		}
+		if hhh.Type != p.Val {
+			panic(fmt.Sprintf("Expectative %s,but found: %s", hhh.Type, p.Val))
+		}
+		return com.toCppVarAssing(o, pro, scope, afterPkg)
+	} else if h.Kind() == TypeOnly {
+		o := h.(Only)
+		return com.toCppOnly(&o, pro, scope, afterPkg)
+	} else if h.Kind() == TypeType {
+		o := h.(TypeTypee)
+		j, err := com.getType(o.Exprd, scope, pro)
+		if err != nil {
+			panic(fmt.Sprintf("Could not get type of: %+v(in compile time)", o.Exprd))
+		}
+		return fmt.Sprintf("\"%s\"", j.Val.(string))
 	} else if h.Kind() == TypeVarDeclaration {
 
 		o := h.(VarDeclaration)
-		if com.getVar(o.Symbol.(Identify).Val.(string), scope) != nil {
+		//fmt.Printf("%+v\n", o)
+		if com.getVar(o.Symbol.(Identify).Val.(string), scope, pro) != nil {
 			panic(fmt.Sprintf("%s already exists", o.Symbol.(Identify).Val.(string)))
 		} else {
-			scope.vars = append(scope.vars, &VarInfoCompile{
-				Name: o.Symbol.(Identify).Val.(string),
-				Type: o.Type.(AssingType).Type.(string),
-			})
+			if !o.TypeOnCompiled {
+				scope.vars = append(scope.vars, &VarInfoCompile{
+					Name: o.Symbol.(Identify).Val.(string),
+					Type: o.Type.(AssingType).Type.(string),
+				})
+				p, err := com.getType(o.Val.(Expr), scope, pro)
+				if err != nil {
+					panic(err)
+				}
+
+				if o.Type.(AssingType).Type.(string) != p.Val {
+					panic(fmt.Sprintf("Expectative %s,but found: %s", o.Type.(AssingType).Type.(string), p.Val))
+				}
+				return com.toCppVar(o, pro, scope, afterPkg)
+			} else {
+				p, err := com.getType(o.Val.(AssingDeclaration).Val.(Expr), scope, pro)
+
+				if err != nil {
+					panic(err)
+				}
+				o.Type = AssingType{
+					Type: p.Val.(string),
+				}
+				scope.vars = append(scope.vars, &VarInfoCompile{
+					Name: o.Symbol.(Identify).Val.(string),
+					Type: p.Val.(string),
+				})
+				return com.toCppVar(o, pro, scope, afterPkg)
+			}
 		}
-		return com.toCppVar(o, pro, scope)
+
 	} else if h.Kind() == TypeBody {
-		_, p := com.toCppBody(h.(BodyStatement), pro, scope)
+		_, p := com.toCppBody(h.(BodyStatement), pro, scope, afterPkg)
 		return p
 	} else if h.Kind() == TypeStruct {
 		o := h.(Struct)
@@ -273,10 +336,10 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 		return com.toCppStruct(*infoCompile, pro, scope)
 	} else if h.Kind() == TypeReturn {
 		o := h.(Return)
-		return com.toCppReturn(o, pro, scope)
+		return com.toCppReturn(o, pro, scope, afterPkg)
 	} else if h.Kind() == TypeFunctionCall {
 		o := h.(FunctionCall)
-		return com.toCppFunctionCall(o, r, pro, scope)
+		return com.toCppFunctionCall(o, r, pro, scope, afterPkg)
 	} else if h.Kind() == TypeBoolean {
 
 		o := h.(Boolean)
@@ -287,8 +350,9 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 			return fmt.Sprintf(" false ")
 
 		}
+
 	} else if h.Kind() == TypeIdentify {
-		if com.getVar(h.(Identify).Val.(string), scope) == nil {
+		if com.getVar(h.(Identify).Val.(string), scope, pro) == nil {
 			panic(fmt.Sprintf("%s not exists", h.(Identify).Val.(string)))
 		}
 		return h.(Identify).Val.(string)
@@ -307,7 +371,7 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 		for _, p := range o.Arguments {
 			fun.Params = append(fun.Params, p.Type.Type.(string))
 		}
-		return com.toCppFunction(o, *fun, pro, scope)
+		return com.toCppFunction(o, *fun, pro, scope, afterPkg)
 	} else {
 		panic("Invalid sentance: " + fmt.Sprint(h.Kind()))
 	}

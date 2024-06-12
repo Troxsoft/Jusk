@@ -1,0 +1,15 @@
+@pkg Os
+
+@only: windows {
+    _OS := "windows"
+}
+@only: linux {
+    _OS := "linux"
+}
+@only: macos {
+    _OS := "macos"
+}
+// windows,linux or macos
+pub fn OS()Str{
+    return _OS
+}

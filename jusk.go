@@ -28,18 +28,18 @@ func showInfo() {
 
 	Version: %s
    ---
-Build for:%s
+Building for:%s
 
 `, color.HiMagentaString("Jusk Programing Language"), color.CyanString("%v", pkg.VERSION), color.YellowString("%s %s", runtime.GOOS, runtime.GOARCH))
 
 }
 func main() {
-	defer func() {
-		if err := recover(); err != nil {
+	// defer func() {
+	// 	if err := recover(); err != nil {
 
-			fmt.Printf("Error: %s\n", color.RedString("%v", err))
-		}
-	}()
+	// 		fmt.Printf("Error: %s\n", color.RedString("%v", err))
+	// 	}
+	// }()
 	app := &cli.App{
 		Name:                 "Jusk",
 		Description:          "The jusk programming language",
@@ -72,7 +72,7 @@ func main() {
 					nameFile = strings.ReplaceAll(nameFile, "\\", "/")
 					nameFile = strings.ReplaceAll(nameFile, "./", "")
 					pedro := strings.Split(nameFile, "/")
-					err = os.WriteFile(nameFile[:len(nameFile)-2]+"cpp", []byte(jusk.Compile(nameFile[:len(nameFile)-len(pedro[len(pedro)-1])])), 0777)
+					err = os.WriteFile(nameFile[:len(nameFile)-2]+"cpp", []byte(jusk.Compile(nameFile[:len(nameFile)-len(pedro[len(pedro)-1])], nil)), 0777)
 
 					if err != nil {
 						return err
@@ -107,7 +107,7 @@ func main() {
 					nameFile = strings.ReplaceAll(nameFile, "\\", "/")
 					nameFile = strings.ReplaceAll(nameFile, "./", "")
 					pedro := strings.Split(nameFile, "/")
-					err = os.WriteFile(nameFile[:len(nameFile)-2]+"cpp", []byte(jusk.Compile(nameFile[:len(nameFile)-len(pedro[len(pedro)-1])])), 0777)
+					err = os.WriteFile(nameFile[:len(nameFile)-2]+"cpp", []byte(jusk.Compile(nameFile[:len(nameFile)-len(pedro[len(pedro)-1])], nil)), 0777)
 
 					if err != nil {
 						return err
@@ -163,7 +163,7 @@ func main() {
 					nameFile = strings.ReplaceAll(nameFile, "\\", "/")
 					nameFile = strings.ReplaceAll(nameFile, "./", "")
 					pedro := strings.Split(nameFile, "/")
-					err = os.WriteFile(nameFile[:len(nameFile)-2]+"cpp", []byte(jusk.Compile(nameFile[:len(nameFile)-len(pedro[len(pedro)-1])])), 0777)
+					err = os.WriteFile(nameFile[:len(nameFile)-2]+"cpp", []byte(jusk.Compile(nameFile[:len(nameFile)-len(pedro[len(pedro)-1])], nil)), 0777)
 
 					if err != nil {
 						return err

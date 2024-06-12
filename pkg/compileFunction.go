@@ -2,10 +2,10 @@ package pkg
 
 import "fmt"
 
-func (c *Compiler) toCppReturn(f90 Return, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
-	return fmt.Sprintf("return %s;", c.GenCode(f90.Val.(Stmt), true, pro, scope))
+func (c *Compiler) toCppReturn(f90 Return, pro *ProgramInfoCompile, scope *ScopeInfoCompile, afterkg bool) string {
+	return fmt.Sprintf("return %s;", c.GenCode(f90.Val.(Stmt), true, pro, scope, afterkg))
 }
-func (c *Compiler) toCppFunction(f90 Function, fun FunctionInfoCompile, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
+func (c *Compiler) toCppFunction(f90 Function, fun FunctionInfoCompile, pro *ProgramInfoCompile, scope *ScopeInfoCompile, afterPkg bool) string {
 	existsFunction := 0
 	for _, v := range pro.funcs {
 		if f90.Symbol.Val.(string) == v.Name {
@@ -33,7 +33,7 @@ func (c *Compiler) toCppFunction(f90 Function, fun FunctionInfoCompile, pro *Pro
 			Name: v.Symbol.Val.(string),
 		})
 	}
-	_, p := c.toCppBody(f90.Body, pro, scoNew)
+	_, p := c.toCppBody(f90.Body, pro, scoNew, afterPkg)
 
 	h := fmt.Sprintf("%s %s %s %s", replaceTypesPrimitivesForCppType(fun.ReturnType), fun.Name, c.toCppArgs(f90.Arguments), p)
 

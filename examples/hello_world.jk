@@ -1,5 +1,7 @@
 @pkg main
 @import "@console/console.jk"
+@import "@os/os.jk"
 pub fn main()Int{
-   Console.Println("Hello World") // :D
+   Console.print("Hello World from: ") // :D
+   Console.println(Os.OS())
 }

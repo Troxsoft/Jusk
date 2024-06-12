@@ -1,14 +1,17 @@
 @pkg Console
 @cpp("#include <iostream>@new_line")
-pub fn Print(text:Str){
+pub fn print(text:Str){
     @cpp(`std::cout<<text;`)
 }
-pub fn Println(text:Str){
+pub fn println(text:Str){
     @cpp(`std::cout<<text<<"\n";`)
 }
-pub fn Input()Str{
+pub fn input()Str{
     @cpp(`std::string h;`)
    
     @cpp(`std::getline(std::cin,h);`)
     return @cpp("h")
+}
+pub fn clear(){
+    print("\033[2J\033[H")
 }

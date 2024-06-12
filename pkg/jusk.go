@@ -13,10 +13,11 @@ type Jusk struct {
 	Compiles *Compiler
 }
 
-func (c *Jusk) Compile(path string) string {
-	r := NewCompiler(c.Astes, path)
+func (c *Jusk) Compile(path string, father *Compiler) string {
+	r := NewCompiler(c.Astes, path, father)
 	r.Compile()
 	c.Compiles = r
+
 	return r.Cpp
 }
 func NewJuskLang(code string) *Jusk {

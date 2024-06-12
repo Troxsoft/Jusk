@@ -7,7 +7,7 @@ A programing language that compile to c++
 @pkg main
 @import "@console/console.jk"
 pub fn main()Int{
-   Console.Println("Hello World")
+   Console.println("Hello World")
 }
 ```
 #### `jusk r hello_world.jk`
@@ -71,13 +71,13 @@ Add to path
 >>> - [ ] or
 >>
 >>>  # visibility
->>> - [x] pub
->>> - [x] priv
->>
+>>> - [x] functions
+>>> - [ ] variables
 >>>  # C++ 
 >>> - [x] @cpp
 >>
 >> # Data types
 >>> # Structs Progress:
->>>  ⬜⬛⬛⬛⬛⬛⬛⬛⬛⬛ 5%
+>>>  ⬜⬛⬛⬛⬛⬛⬛⬛⬛⬛ 2%
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

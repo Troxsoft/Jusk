@@ -1,0 +1,12 @@
+@pkg main
+@import "@os/os.jk"
+@import "@console/console.jk"
+//var holaMundo:Int = 20 
+var globalVariable:Str = "This is a ..."
+pub fn main()Int{
+    num1 := 20
+
+    num2 := num1+20    
+    Console.println(toStr(num1*num2))
+    Console.println(globalVariable)
+}   

@@ -6,11 +6,14 @@ func isIntNumber(num byte) bool {
 	}
 	return false
 }
+
 func replaceTypesPrimitivesForCppType(c string) string {
 	if c == "Int" {
 		return "int"
 	} else if c == "Void" {
 		return "void"
+	} else if c == "Float" {
+		return "float"
 	} else if c == "Bool" {
 		return "bool"
 	} else if c == "Str" {

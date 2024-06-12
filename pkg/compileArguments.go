@@ -11,14 +11,14 @@ func (c *Compiler) toCppArgs(h []Argument) string {
 	}
 	return l + ")"
 }
-func (c *Compiler) toCppArgsFuncCall(h []Stmt, pro *ProgramInfoCompile, scope *ScopeInfoCompile) string {
+func (c *Compiler) toCppArgsFuncCall(h []Stmt, pro *ProgramInfoCompile, scope *ScopeInfoCompile, afterPkg bool) string {
 	l := "("
 	for i, v := range h {
 		if i != len(h)-1 {
 
-			l += c.GenCode(v, false, pro, scope) + " , "
+			l += c.GenCode(v, false, pro, scope, afterPkg) + " , "
 		} else {
-			l += c.GenCode(v, false, pro, scope) + "  "
+			l += c.GenCode(v, false, pro, scope, afterPkg) + "  "
 		}
 	}
 	return l + ")"

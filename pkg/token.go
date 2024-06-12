@@ -32,6 +32,11 @@ const (
 	IMPORT
 	COMMENT
 	IF
+	ONLY
+	WINDOWS
+	MACOS
+	LINUX
+	NEWVAR // :=
 	// logic op
 	COMPARE         // == igual
 	NOCOMPARE       // != no igual
@@ -39,8 +44,8 @@ const (
 	LESS            // < menor
 	COMPARE_GREATER // >= mayor o igual
 	BOOLEAN         // true or false
-
-	COMPARE_LESS // <= menor o igual
+	TYPE            // @type
+	COMPARE_LESS    // <= menor o igual
 
 )
 
