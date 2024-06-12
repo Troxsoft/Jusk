@@ -26,7 +26,7 @@ Add to path
 > # Progress
 >> - [x] Boolean
 >> - [x] Single line comment
->> - [ ] Multi line comment  
+>> - [x] Multi line comment  
 >> # Message Errors
 >> - [ ] error with code
 >> - [ ] util info
@@ -45,7 +45,6 @@ Add to path
 >>> - [x] if
 >>> - [ ] elif
 >>> - [ ] else
->>> - [ ] check if boolean
 >> - [x] import package
 >> - [x] strings
 >> - [x] numbers
@@ -54,7 +53,7 @@ Add to path
 >> - [ ] array parse
 >> - [ ] array declaration
 >> - [x] declare package
->> - [ ] type-check  
+>> - [ ] type-check  50%
 >>>  # BinaryExpressions:
 >>> - [x] +
 >>> - [x] -

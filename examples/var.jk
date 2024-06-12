@@ -6,7 +6,7 @@ var globalVariable:Str = "This is a ..."
 pub fn main()Int{
     num1 := 20
 
-    num2 := num1+20    
+    num2/*Esto es un comentario*/:= num1+20    
     Console.println(toStr(num1*num2))
     Console.println(globalVariable)
 }   

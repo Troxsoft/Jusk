@@ -146,6 +146,22 @@ func (j *Jusk) Tokenize() error {
 
 			i = endComment
 
+		} else if i+1 < len(j.Code) && ac == '/' && j.Code[i+1] == '*' {
+			startComment := i
+			endComment := startComment
+			for endComment < len(j.Code) {
+				//fmt.Printf("'%s'\n", string(j.Code[endComment]))
+				if j.Code[endComment] == '*' && j.Code[endComment+1] == '/' {
+					endComment++
+					endComment++
+
+					break
+				}
+				endComment++
+			}
+
+			i = endComment
+
 		} else if i+6 < len(j.Code) && ac == 'r' && j.Code[i+1] == 'e' && j.Code[i+2] == 't' && j.Code[i+3] == 'u' && j.Code[i+4] == 'r' && j.Code[i+5] == 'n' && j.Code[i+6] == ' ' {
 			toks = append(toks, NewToken(RETURN, "return"))
 			i += 6
