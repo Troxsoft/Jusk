@@ -34,12 +34,12 @@ Building for:%s
 
 }
 func main() {
-	// defer func() {
-	// 	if err := recover(); err != nil {
+	defer func() {
+		if err := recover(); err != nil {
 
-	// 		fmt.Printf("Error: %s\n", color.RedString("%v", err))
-	// 	}
-	// }()
+			fmt.Printf("Error: %s\n", color.RedString("%v", err))
+		}
+	}()
 	app := &cli.App{
 		Name:                 "Jusk",
 		Description:          "The jusk programming language",
