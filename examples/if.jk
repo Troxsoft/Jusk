@@ -1,0 +1,15 @@
+@pkg main
+@import "@os/os.jk"
+@import "@console/console.jk"
+pub fn main()Int{  
+    nombre := Console.input()
+    if nombre == "putin" or nombre == "vladimir putin"{
+        Console.println("1 te llamas putin")
+    }elif nombre == "nalgon" and 2+2 == 4{
+        Console.println("2 te llamas nalgon")
+    }else {
+        Console.print("3 te llamas ")
+        Console.println(nombre)
+    }
+
+}

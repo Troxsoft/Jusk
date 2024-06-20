@@ -32,9 +32,21 @@ func (j *Jusk) Tokenize() error {
 		} else if i+4 < len(j.Code) && ac == '@' && j.Code[i+1] == 't' && j.Code[i+2] == 'y' && j.Code[i+3] == 'p' && j.Code[i+4] == 'e' {
 			toks = append(toks, NewToken(TYPE, "@type"))
 			i += 5
+		} else if i+4 < len(j.Code) && ac == 'e' && j.Code[i+1] == 'l' && j.Code[i+2] == 'i' && j.Code[i+3] == 'f' && j.Code[i+4] == ' ' {
+			toks = append(toks, NewToken(ELIF, "elif"))
+			i += 4
+		} else if i+4 < len(j.Code) && ac == 'e' && j.Code[i+1] == 'l' && j.Code[i+2] == 's' && j.Code[i+3] == 'e' && j.Code[i+4] == ' ' {
+			toks = append(toks, NewToken(ElSE, "else"))
+			i += 4
 		} else if i+1 < len(j.Code) && ac == '<' && j.Code[i+1] == '=' {
 			toks = append(toks, NewToken(COMPARE_LESS, "<="))
 			i += 2
+		} else if i+1 < len(j.Code) && ac == 'o' && j.Code[i+1] == 'r' {
+			toks = append(toks, NewToken(OR, "or"))
+			i += 2
+		} else if i+1 < len(j.Code) && ac == 'a' && j.Code[i+1] == 'n' && j.Code[i+2] == 'd' {
+			toks = append(toks, NewToken(AND, "and"))
+			i += 3
 		} else if i+1 < len(j.Code) && ac == ':' && j.Code[i+1] == '=' {
 			toks = append(toks, NewToken(NEWVAR, ":="))
 			i += 2

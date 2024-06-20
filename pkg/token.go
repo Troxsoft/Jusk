@@ -46,6 +46,10 @@ const (
 	BOOLEAN         // true or false
 	TYPE            // @type
 	COMPARE_LESS    // <= menor o igual
+	ELIF            // elif
+	ElSE            // else
+	AND             // and
+	OR              // or
 
 )
 

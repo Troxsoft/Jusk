@@ -421,7 +421,7 @@ func (a *Ast) parseLogicExpr() Expr {
 	left := a.parseAAAPointStmtAsExpr()
 
 	// * / %
-	for a.actual().Type == COMPARE || a.actual().Type == LESS || a.actual().Type == GREATER || a.actual().Type == COMPARE_GREATER || a.actual().Type == COMPARE_LESS || a.actual().Type == NOCOMPARE {
+	for a.actual().Type == COMPARE || a.actual().Type == LESS || a.actual().Type == GREATER || a.actual().Type == COMPARE_GREATER || a.actual().Type == COMPARE_LESS || a.actual().Type == NOCOMPARE || a.actual().Type == OR || a.actual().Type == AND {
 		operator := a.actual()
 		a.next()
 		right := a.parseExpr()

@@ -76,7 +76,7 @@ func (c *Compiler) getType(value Expr, scope *ScopeInfoCompile, pro *ProgramInfo
 	} else if value.Kind() == TypeBinaryExpression {
 		o := value.(BinaryExpression)
 		boolean := false
-		if o.Operator == COMPARE || o.Operator == LESS || o.Operator == GREATER || o.Operator == COMPARE_GREATER || o.Operator == COMPARE_LESS || o.Operator == NOCOMPARE {
+		if o.Operator == COMPARE || o.Operator == LESS || o.Operator == GREATER || o.Operator == COMPARE_GREATER || o.Operator == COMPARE_LESS || o.Operator == NOCOMPARE || o.Operator == AND || o.Operator == OR {
 			boolean = true
 		}
 		leftType, err := c.getType(o.Left, scope, pro)
@@ -88,6 +88,7 @@ func (c *Compiler) getType(value Expr, scope *ScopeInfoCompile, pro *ProgramInfo
 			return nil, fmt.Errorf("Error ocurred into right for binaryExpression: %+v \n%+v", o, err)
 		}
 		if boolean {
+
 			return &Identify{Val: "Bool"}, nil
 		} else {
 			if leftType.Val != rightType.Val {

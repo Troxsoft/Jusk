@@ -246,6 +246,10 @@ func (com *Compiler) GenCode(h Stmt, r bool, pro *ProgramInfoCompile, scope *Sco
 			l += "<="
 		} else if o.Operator == NOCOMPARE {
 			l += "!="
+		} else if o.Operator == AND {
+			l += "&&"
+		} else if o.Operator == OR {
+			l += "||"
 		}
 		l += com.GenCode(o.Right.(Stmt), false, pro, scope, afterPkg)
 		return l
