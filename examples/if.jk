@@ -2,6 +2,9 @@
 @import "@os/os.jk"
 @import "@console/console.jk"
 pub fn main()Int{  
+    // numeros := Array(Int,[20,20,40]) // forma robusta,sirve para inicializar un array (puede ser vacio)
+    // numeros := [20,20,40] // forma simplificada,determina el tipo segun el primer elemento del array,si el array esta vacio generara un error(no puede ser vacio)
+
     nombre := Console.input()
     if nombre == "putin" or nombre == "vladimir putin"{
         Console.println("1 te llamas putin")
@@ -11,5 +14,5 @@ pub fn main()Int{
         Console.print("3 te llamas ")
         Console.println(nombre)
     }
-
+    
 }

@@ -43,8 +43,8 @@ Add to path
 >> - [x] call function
 >>>  # if
 >>> - [x] if
->>> - [ ] elif
->>> - [ ] else
+>>> - [x] elif
+>>> - [x] else
 >> - [x] import package
 >> - [x] strings
 >> - [x] numbers
@@ -53,7 +53,7 @@ Add to path
 >> - [ ] array parse
 >> - [ ] array declaration
 >> - [x] declare package
->> - [ ] type-check  50%
+>> - [ ] type-check  80%
 >>>  # BinaryExpressions:
 >>> - [x] +
 >>> - [x] -
@@ -66,12 +66,12 @@ Add to path
 >>> - [x] >
 >>> - [x] <=
 >>> - [x] >=
->>> - [ ] and
->>> - [ ] or
+>>> - [x] and
+>>> - [x] or
 >>
 >>>  # visibility
 >>> - [x] functions
->>> - [ ] variables
+>>> - [ ] global variables
 >>>  # C++ 
 >>> - [x] @cpp
 >>
